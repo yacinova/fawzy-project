@@ -32,17 +32,34 @@ import { uploadPhoto } from '../services/storageService';
 // --- Sub-components ---
 
 const Header = ({ onHome }) => (
-  <header className="p-8 flex flex-col items-center border-b border-zinc-900 bg-black sticky top-0 z-50">
-    <div
-      className="flex items-center gap-2 cursor-pointer group transition-all transform active:scale-95"
-      onClick={onHome}
-    >
-      <img src="./sam_logo.png" alt="" className="w-full h-16" />
+  <header className="sticky top-0 z-[100] px-6 py-4 md:px-12 md:py-6 bg-black/60 backdrop-blur-3xl border-b border-white/5 animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="max-w-[1400px] mx-auto flex flex-col items-center">
+      {/* Logos Row */}
+      <div className="w-full flex items-center justify-between mb-2 md:mb-0">
+        <div
+          className="flex items-center cursor-pointer group"
+          onClick={onHome}
+        >
+          <div className="relative">
+            <div className="absolute -inset-4 bg-white/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" />
+            <img src="./sam_logo.png" alt="Logo" className="h-10 md:h-12 w-auto object-contain brightness-110 group-hover:scale-110 transition-transform duration-500 relative z-10" />
+          </div>
+        </div>
+
+        <div className="flex items-center group">
+          <img src="./fawzy-logo.png" alt="Logo" className="h-12 md:h-40 w-auto object-contain brightness-110 group-hover:scale-105 transition-transform duration-500 relative z-10" />
+        </div>
+      </div>
+
+      {/* Tagline - Bottom Center */}
+      <div className="flex justify-center md:-mt-10 relative z-0 pointer-events-none">
+        <div className="pointer-events-auto px-6 py-2 rounded-full bg-white/5 border border-white/5 backdrop-blur-sm shadow-2xl">
+          <p className="text-[7px] md:text-[10px] uppercase tracking-[0.3em] md:tracking-[0.5em] text-zinc-400 text-center font-black">
+            "Earn Your Tier • Own Your Title"
+          </p>
+        </div>
+      </div>
     </div>
-    <h1 className="text-[10px] uppercase tracking-[0.5em] text-zinc-400 mt-3 font-black bg-white/5 px-4 py-1 rounded-full border border-white/10">
-      TCS Engineer's Challenge
-    </h1>
-    <p className="text-[11px] text-zinc-500 italic mt-3 font-medium">“Earn Your Tier Own Your Title”</p>
   </header>
 );
 
@@ -51,19 +68,28 @@ const MetricBar = ({ label, value, max = 100, suffix = "", color = "bg-blue-600"
   const barColor = inverse ? (value > 15 ? "bg-red-500" : (value > 5 ? "bg-yellow-500" : "bg-green-500")) : color;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between text-[10px] uppercase font-black text-zinc-500 tracking-tighter">
-        <span className="flex items-center gap-1">
-          {label}
-          <span className="opacity-40 text-[7px] lowercase">({inverse ? 'low is better' : 'high is better'})</span>
-        </span>
-        <span className={inverse && value > 15 ? "text-red-400" : "text-white"}>{value}{suffix}</span>
+    <div className="space-y-3">
+      <div className="flex justify-between items-end">
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase font-black text-white/90 tracking-widest">{label}</span>
+          <span className="text-[7px] uppercase font-bold text-zinc-600 tracking-[0.2em]">{inverse ? 'Inverted Metric : Minimize' : 'Linear Metric : Maximize'}</span>
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className={`text-xl font-black italic tracking-tighter ${inverse && value > 15 ? "text-red-500" : "text-white"}`}>{value}</span>
+          <span className="text-[8px] font-black text-zinc-500 uppercase">{suffix}</span>
+        </div>
       </div>
-      <div className="h-2 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5">
+      <div className="h-2.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5 relative glass-card">
         <div
-          className={`h-full ${barColor} transition-all duration-1000 shadow-[0_0_10px_rgba(255,255,255,0.05)]`}
-          style={{ width: `${Math.min(100, (displayPercent / max) * 100)}%` }}
+          className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: 'linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '10% 100%' }}
         />
+        <div
+          className={`h-full ${barColor} transition-all duration-1000 relative shadow-2xl`}
+          style={{ width: `${Math.min(100, (displayPercent / max) * 100)}%` }}
+        >
+          <div className="absolute top-0 right-0 bottom-0 w-1 bg-white opacity-40" />
+        </div>
       </div>
     </div>
   );
@@ -89,6 +115,7 @@ const PageContent = () => {
   const [fetchedHiddenEngineers, setFetchedHiddenEngineers] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
+  const [isLogged, setIsLogged] = useState(false);
 
   // Initial Load
   useEffect(() => {
@@ -162,6 +189,9 @@ const PageContent = () => {
       setCurrentUser(foundAdmin);
       setLoginUser('');
       setLoginPass('');
+      // save userName in local storage
+      localStorage.setItem('userName', foundAdmin.name);
+      setIsLogged(true);
       setView('ADMIN_DASHBOARD');
     } else {
       message.error("User or Password are wrong");
@@ -170,6 +200,9 @@ const PageContent = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    // clear userName from local storage
+    localStorage.removeItem('userName');
+    setIsLogged(false);
     setView('HOME');
   };
 
@@ -432,374 +465,404 @@ const PageContent = () => {
     <div className="min-h-screen bg-black text-white flex flex-col pb-24 selection:bg-blue-600 selection:text-white">
       <Header onHome={() => setView('HOME')} />
 
-      <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-8">
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8">
 
         {view === 'HOME' && (
-          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-            <section className="relative pt-6 pb-6">
-              <div className="text-center space-y-3 mb-12">
-                <h2 className="text-xs font-black text-zinc-500 uppercase tracking-[0.4em] opacity-80">Global Tier Leaderboard</h2>
-                <div className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-400 px-5 py-2 rounded-full border border-blue-600/20 shadow-xl shadow-blue-900/5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    Cycle: {engineers[0]?.month || "---"} {engineers[0]?.year || ""}
-                  </span>
-                </div>
+          <div className="space-y-24 animate-in fade-in slide-in-from-bottom-12 duration-1000 ease-out">
+            {/* Hero & Leaderboard */}
+            <section className="relative px-4">
+              {/* Creative Background Element */}
+              <div className="absolute -top-24 left-1/2 -translate-x-1/2 select-none pointer-events-none opacity-[0.03] text-[20vw] font-black tracking-tighter whitespace-nowrap text-white z-0">
+                TOP TIER
               </div>
 
-              <div className="flex justify-center items-end gap-3 md:gap-6">
-                {/* 2nd Place */}
+              <div className="relative z-10 text-center space-y-4 mb-20">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  </span>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Next-Gen TCS Ecosystem</p>
+                </div>
+                <h2 className="text-5xl md:text-7xl font-black tracking-tighter text-white">
+                  Beyond<span className="text-blue-600"> Standards</span><br />Above<span className="text-blue-600"> Average</span>
+                </h2>
+                <p className="text-zinc-500 text-sm md:text-base font-medium max-w-md mx-auto">
+                  “The definitive ranking of technical excellence within the global network.”
+                </p>
+              </div>
+
+              {/* Minimalist Podium v3 */}
+              <div className="relative flex flex-col md:flex-row justify-center items-center md:items-end gap-16 md:gap-4 max-w-5xl mx-auto pt-10">
+                {/* Second Place */}
                 {topThree[1] && (
-                  <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700 delay-200">
-                    <div className="relative group cursor-pointer">
-                      <img src={topThree[1].photoUrl} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-zinc-600 object-cover shadow-2xl transition-transform group-hover:scale-105" alt={topThree[1].name} />
-                      <div className="absolute -top-2 -right-2 bg-zinc-500 text-black font-black rounded-full w-6 h-6 flex items-center justify-center text-[10px] shadow-lg">2</div>
+                  <div className="group relative flex flex-col items-center animate-in slide-in-from-left-8 duration-700 delay-200">
+                    <div className="relative z-10 w-24 h-24 md:w-32 md:h-32 mb-6">
+                      <div className="absolute inset-0 rounded-full bg-zinc-700/20 blur-2xl group-hover:bg-zinc-700/40 transition-all" />
+                      <img src={topThree[1].photoUrl} className="relative z-10 w-full h-full rounded-full object-cover border-2 border-zinc-700 grayscale hover:grayscale-0 transition-all duration-500" alt={topThree[1].name} />
+                      <div className="absolute -bottom-2 right-0 z-20 bg-zinc-700 text-black text-xs font-black w-10 h-10 rounded-full flex items-center justify-center border-4 border-black">
+                        02
+                      </div>
                     </div>
-                    <p className="text-[10px] font-black mt-3 truncate w-20 text-center uppercase tracking-tighter">{topThree[1].name}</p>
-                    <p className={`text-[8px] font-black uppercase tracking-[0.1em] ${getTierColor(topThree[1].tier)}`}>{topThree[1].tier}</p>
-                    <div className="h-20 w-16 bg-gradient-to-t from-zinc-900 to-zinc-700 rounded-t-2xl mt-3 flex flex-col items-center justify-center border-t border-zinc-700/50">
-                      <span className="font-black text-white text-base">{topThree[1].tcsScore}</span>
-                      <span className="text-[7px] text-zinc-500 uppercase font-black">TCS Score</span>
+                    <div className="text-center">
+                      <h4 className="text-zinc-400 text-[10px] font-black uppercase tracking-widest mb-1">{topThree[1].tier}</h4>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight truncate w-32">{topThree[1].name}</h3>
+                      <div className="mt-3 py-2 px-6 rounded-full bg-zinc-900 border border-zinc-800 group-hover:border-zinc-500 transition-colors shadow-xl">
+                        <span className="text-xl font-black text-white">{topThree[1].tcsScore}</span>
+                      </div>
                     </div>
                   </div>
                 )}
-                {/* 1st Place */}
+
+                {/* First Place */}
                 {topThree[0] && (
-                  <div className="flex flex-col items-center animate-in slide-in-from-bottom-10 duration-1000">
-                    <div className="relative group scale-110 -mt-10 cursor-pointer">
-                      <img src={topThree[0].photoUrl} className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-yellow-500 object-cover shadow-[0_0_40px_rgba(234,179,8,0.25)] transition-all group-hover:scale-105" alt={topThree[0].name} />
-                      <div className="absolute -top-3 -right-3 bg-yellow-500 text-black font-black rounded-full w-9 h-9 flex items-center justify-center text-sm shadow-xl border-2 border-black">1</div>
+                  <div className="group relative flex flex-col items-center z-20 -mt-10 md:scale-125 animate-in zoom-in-95 duration-1000">
+                    <div className="relative w-32 h-32 md:w-40 md:h-40 mb-8 p-1.5 rounded-full bg-gradient-to-tr from-yellow-500/40 via-transparent to-yellow-500/10">
+                      <div className="absolute inset-0 rounded-full bg-yellow-500/5 blur-3xl group-hover:bg-yellow-500/10 transition-all" />
+                      <img src={topThree[0].photoUrl} className="relative z-10 w-full h-full rounded-full object-cover border-4 border-yellow-500 shadow-2xl" alt={topThree[0].name} />
+                      <div className="absolute -bottom-3 right-0 z-20 bg-yellow-500 text-black text-base font-black w-14 h-14 rounded-full flex items-center justify-center border-4 border-black shadow-[0_0_30px_rgba(234,179,8,0.5)]">
+                        01
+                      </div>
                     </div>
-                    <p className="text-[11px] font-black mt-4 truncate w-28 text-center uppercase tracking-tighter text-yellow-500">{topThree[0].name}</p>
-                    <p className={`text-[9px] font-black uppercase tracking-[0.2em] ${getTierColor(topThree[0].tier)}`}>{topThree[0].tier}</p>
-                    <div className="h-36 w-24 bg-gradient-to-t from-zinc-900/80 to-yellow-600/30 rounded-t-3xl mt-4 flex flex-col items-center justify-center border-t border-yellow-500/30 backdrop-blur-sm">
-                      <span className="font-black text-yellow-500 text-2xl tracking-tighter">{topThree[0].tcsScore}</span>
-                      <span className="text-[8px] text-yellow-600 uppercase font-black tracking-widest">Master TCS</span>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <Award className="w-5 h-5 text-yellow-500" />
+                        <h3 className="text-2xl font-black text-yellow-500 uppercase tracking-tighter truncate w-40">{topThree[0].name}</h3>
+                      </div>
+                      <h4 className="text-yellow-600/60 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Supreme Tier</h4>
+                      <div className="py-4 px-10 rounded-3xl bg-yellow-500/5 backdrop-blur-md border border-yellow-500/20 shadow-2xl relative overflow-hidden group/btn hover:scale-105 transition-transform">
+                        <div className="absolute inset-0 bg-yellow-500/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
+                        <span className="relative z-10 text-4xl font-black text-yellow-500 tracking-tighter">{topThree[0].tcsScore}</span>
+                      </div>
                     </div>
                   </div>
                 )}
-                {/* 3rd Place */}
+
+                {/* Third Place */}
                 {topThree[2] && (
-                  <div className="flex flex-col items-center animate-in slide-in-from-bottom-8 duration-700 delay-300">
-                    <div className="relative group cursor-pointer">
-                      <img src={topThree[2].photoUrl} className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-orange-800 object-cover shadow-2xl transition-transform group-hover:scale-105" alt={topThree[2].name} />
-                      <div className="absolute -top-2 -right-2 bg-orange-800 text-white font-black rounded-full w-6 h-6 flex items-center justify-center text-[10px] shadow-lg">3</div>
+                  <div className="group relative flex flex-col items-center animate-in slide-in-from-right-8 duration-700 delay-300">
+                    <div className="relative z-10 w-24 h-24 md:w-28 md:h-28 mb-6">
+                      <div className="absolute inset-0 rounded-full bg-orange-950/20 blur-2xl group-hover:bg-orange-950/40 transition-all" />
+                      <img src={topThree[2].photoUrl} className="relative z-10 w-full h-full rounded-full object-cover border-2 border-orange-900/50 grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500" alt={topThree[2].name} />
+                      <div className="absolute -bottom-1 right-0 z-20 bg-orange-900 text-white text-[10px] font-black w-8 h-8 rounded-full flex items-center justify-center border-2 border-black">
+                        03
+                      </div>
                     </div>
-                    <p className="text-[10px] font-black mt-3 truncate w-20 text-center uppercase tracking-tighter">{topThree[2].name}</p>
-                    <p className={`text-[8px] font-black uppercase tracking-[0.1em] ${getTierColor(topThree[2].tier)}`}>{topThree[2].tier}</p>
-                    <div className="h-16 w-16 bg-gradient-to-t from-zinc-900 to-orange-900/30 rounded-t-2xl mt-3 flex flex-col items-center justify-center border-t border-orange-900/30">
-                      <span className="font-black text-orange-700 text-base">{topThree[2].tcsScore}</span>
-                      <span className="text-[7px] text-orange-900 uppercase font-black">TCS Score</span>
+                    <div className="text-center">
+                      <h4 className="text-orange-900/50 text-[10px] font-black uppercase tracking-widest mb-1">{topThree[2].tier}</h4>
+                      <h3 className="text-lg font-black text-zinc-400 group-hover:text-white transition-colors uppercase tracking-tight truncate w-32">{topThree[2].name}</h3>
+                      <div className="mt-3 py-2 px-5 rounded-full bg-zinc-900/50 border border-zinc-800/50 group-hover:border-orange-900/40 transition-colors">
+                        <span className="text-lg font-black text-zinc-500 group-hover:text-orange-700 transition-colors">{topThree[2].tcsScore}</span>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
             </section>
 
-            <div className="grid grid-cols-1 gap-5 pt-8">
-              <button onClick={() => setView('ENGINEER_LOOKUP')} className="group relative overflow-hidden flex items-center justify-between p-7 bg-zinc-900/80 rounded-[2rem] border border-zinc-800 hover:border-blue-500/50 hover:bg-zinc-900 transition-all active:scale-[0.98] shadow-2xl">
-                <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/[0.02] transition-colors" />
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className="p-4 bg-blue-600/10 rounded-2xl text-blue-500 group-hover:scale-110 transition-transform">
-                    <Search className="w-7 h-7" />
+            {/* High-Impact Actions */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto px-4 pb-20">
+              <button
+                onClick={() => setView('ENGINEER_LOOKUP')}
+                className="group relative h-80 overflow-hidden rounded-[3rem] bg-zinc-900/50 border border-white/5 hover:border-blue-500/20 transition-all duration-500 p-10 flex flex-col justify-between"
+              >
+                <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10 text-left">
+                  <div className="w-16 h-16 bg-blue-500 text-white rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500">
+                    <Search className="w-8 h-8" />
                   </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-black tracking-tight uppercase">Tier Verification</h3>
-                    <p className="text-[11px] text-zinc-500 font-medium tracking-tight">“Confirm your rank within the Samsung technical ecosystem”</p>
-                  </div>
+                  <h3 className="text-3xl font-black tracking-tighter text-white mt-8 uppercase">Capability<br /><span className="text-blue-500">Audit</span></h3>
+                  <p className="text-zinc-500 text-sm font-medium mt-4 max-w-[200px]">Verify your standing in the global hierarchy.</p>
                 </div>
-                <ChevronRight className="w-6 h-6 text-zinc-700 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
+                <div className="relative z-10 self-end flex items-center gap-3 text-blue-500 font-black text-[10px] uppercase tracking-[0.2em] group-hover:gap-5 transition-all">
+                  Access Portal <ChevronRight className="w-4 h-4" />
+                </div>
               </button>
 
-              <button onClick={() => setView(currentUser ? 'ADMIN_DASHBOARD' : 'ADMIN_LOGIN')} className="group relative overflow-hidden flex items-center justify-between p-7 bg-zinc-900/80 rounded-[2rem] border border-zinc-800 hover:border-zinc-500 hover:bg-zinc-900 transition-all active:scale-[0.98] shadow-2xl">
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className="p-4 bg-zinc-700/10 rounded-2xl text-zinc-400 group-hover:scale-110 transition-transform">
-                    <ShieldCheck className="w-7 h-7" />
+              <button
+                onClick={() => setView(isLogged ? 'ADMIN_DASHBOARD' : 'ADMIN_LOGIN')}
+                className="group relative h-80 overflow-hidden rounded-[3rem] bg-white text-black hover:bg-zinc-200 transition-all duration-500 p-10 flex flex-col justify-between"
+              >
+                <div className="relative z-10 text-left">
+                  <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-500">
+                    <ShieldCheck className="w-8 h-8" />
                   </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-black tracking-tight uppercase">Management Node</h3>
-                    <p className="text-[11px] text-zinc-500 font-medium tracking-tight">System configuration and engineer capability indexing</p>
-                  </div>
+                  <h3 className="text-3xl font-black tracking-tighter mt-8 uppercase leading-none">Management<br />Node</h3>
+                  <p className="text-zinc-600 text-sm font-medium mt-4 max-w-[200px]">Unauthorized access is strictly monitored.</p>
                 </div>
-                <ChevronRight className="w-6 h-6 text-zinc-700 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                <div className="relative z-10 self-end flex items-center gap-3 font-black text-[10px] uppercase tracking-[0.2em] group-hover:gap-5 transition-all">
+                  Initialize Login <LogOut className="w-4 h-4 rotate-180" />
+                </div>
               </button>
-            </div>
+            </section>
           </div>
         )}
 
         {view === 'ENGINEER_LOOKUP' && (
-          <div className="space-y-8 animate-in slide-in-from-right-6 duration-500">
-            <button onClick={() => setView('HOME')} className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 hover:text-white transition-all bg-white/5 px-4 py-2 rounded-full border border-white/5">
-              <ChevronRight className="w-4 h-4 rotate-180" /> Back to Dashboard
-            </button>
-            <div className="text-center py-10">
-              <h2 className="text-4xl font-black tracking-tighter text-white">Capability Audit</h2>
-              <p className="text-sm text-zinc-500 mt-2 font-medium">Verify your Tier status in the global ranking</p>
-            </div>
-            <div className="space-y-6 max-w-sm mx-auto">
-              <input
-                type="text"
-                value={searchCode}
-                onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
-                placeholder="EX: SAM-001"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-6 text-center text-3xl font-black tracking-[0.4em] focus:ring-4 focus:ring-blue-600/20 focus:border-blue-600 outline-none transition-all placeholder:text-zinc-800 shadow-2xl"
-              />
-              <button onClick={handleSearch} className="w-full bg-blue-600 py-5 rounded-3xl font-black text-lg hover:bg-blue-500 transition-all active:scale-95 shadow-2xl shadow-blue-900/30 uppercase tracking-[0.3em]">
-                INITIATE VERIFICATION
+          <div className="space-y-16 animate-in slide-in-from-right-8 duration-700">
+            {/* Header section */}
+            <div className=" gap-12 border-b border-white/5 pb-6">
+
+
+
+              <button
+                onClick={() => setView('HOME')}
+                className="flex items-center gap-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-all bg-white/5 px-8 py-4 rounded-full border border-white/10"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" /> Return to Hub
               </button>
+
+              <h2 className="text-6xl text-center font-black tracking-tighter text-white uppercase italic leading-none py-12">"Precision Defines Rank."</h2>
+            </div>
+
+
+            {/* Central Verification Unit */}
+            <div className="max-w-2xl mx-auto">
+              <div className="glass-card rounded-[4rem] p-12 md:p-16 space-y-12 border-blue-500/10 shadow-3xl text-center relative overflow-hidden">
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                  <Search className="w-64 h-64 -rotate-12" />
+                </div>
+
+                <div className="space-y-4 relative z-10">
+                  <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Credential Verification</h3>
+                  <p className="text-zinc-400 text-xs font-medium uppercase tracking-widest">Enter unique engineer identification code below</p>
+                </div>
+
+                <div className="space-y-8 relative z-10">
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={searchCode}
+                      onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
+                      placeholder="PROTO_XYZ_000"
+                      className="w-full bg-black border border-white/5 rounded-3xl p-8 text-center text-4xl font-black tracking-[0.4em] focus:border-blue-500 transition-all outline-none placeholder:text-zinc-900 text-white shadow-inner"
+                    />
+                    <div className="absolute -bottom-px left-1/2 -translate-x-1/2 w-0 h-[2px] bg-blue-500 group-focus-within:w-1/2 transition-all duration-700" />
+                  </div>
+
+                  <button
+                    onClick={handleSearch}
+                    className="w-full bg-white text-black py-8 rounded-3xl font-black text-sm uppercase tracking-[0.4em] hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-2xl"
+                  >
+                    Search
+                  </button>
+                </div>
+
+                <div className="pt-8 border-t border-white/5 flex items-center justify-center gap-6 relative z-10">
+                  <div className="flex flex-col items-center">
+                    <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Nodes Scanned</span>
+                    <span className="text-sm font-black text-zinc-400 uppercase">Global_Registry</span>
+                  </div>
+                  <div className="h-4 w-[1px] bg-zinc-800" />
+                  <div className="flex flex-col items-center">
+                    <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Protocol</span>
+                    <span className="text-sm font-black text-zinc-400 uppercase">TCS-V7.2</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {view === 'ADMIN_LOGIN' && (
-          <div className="max-w-sm mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500">
-            <div className="text-center">
-              <div className="inline-block p-6 bg-zinc-900 rounded-[2rem] mb-6 shadow-2xl border border-white/5">
-                <ShieldCheck className="w-12 h-12 text-blue-500 animate-pulse-subtle" />
+          <div className="max-w-md mx-auto pt-24 space-y-12 animate-in fade-in zoom-in-95 duration-700">
+            <div className="text-left space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-[2px] w-12 bg-white" />
+                <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-500">Secure Gateway</span>
               </div>
-              <h2 className="text-3xl font-black tracking-tight">Terminal Login</h2>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] mt-2 font-bold opacity-60">Authentication Required</p>
+              <h2 className="text-6xl font-black tracking-tighter text-white uppercase italic leading-none">TERMINAL<br />LOGIN</h2>
+              <p className="text-zinc-600 text-sm font-medium">Authentication required for management node access.</p>
             </div>
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-zinc-500 ml-4 tracking-widest">Admin Identifier</label>
-                <input type="text" placeholder="Access ID" value={loginUser} onChange={e => setLoginUser(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-sm focus:border-white focus:bg-zinc-900 transition-all outline-none placeholder:text-zinc-700 font-bold" />
+
+            <div className="space-y-6 bg-zinc-900 shadow-3xl p-10 rounded-[3rem] border border-white/5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Access ID</label>
+                <input
+                  type="text"
+                  placeholder="USERNAME_ALPHA"
+                  value={loginUser}
+                  onChange={e => setLoginUser(e.target.value)}
+                  className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm focus:border-blue-500 transition-all outline-none placeholder:text-zinc-800 font-bold text-white shadow-inner"
+                />
               </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-zinc-500 ml-4 tracking-widest">Security Token</label>
-                <input type="password" placeholder="System Token" value={loginPass} onChange={e => setLoginPass(e.target.value)} className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 text-sm focus:border-white focus:bg-zinc-900 transition-all outline-none placeholder:text-zinc-700 font-bold" />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Security Token</label>
+                <input
+                  type="password"
+                  placeholder="••••••••••••"
+                  value={loginPass}
+                  onChange={e => setLoginPass(e.target.value)}
+                  className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm focus:border-blue-500 transition-all outline-none placeholder:text-zinc-800 font-bold text-white shadow-inner"
+                />
               </div>
-              <button onClick={handleAdminLogin} className="w-full bg-white text-black py-5 rounded-2xl font-black text-sm hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-2xl uppercase tracking-[0.2em] mt-4">
-                EXECUTE ACCESS
+              <button
+                onClick={handleAdminLogin}
+                className="w-full bg-white text-black py-6 rounded-2xl font-black text-sm hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-2xl uppercase tracking-[0.3em] mt-6"
+              >
+                Execute Initialization
               </button>
-              <button onClick={() => setView('HOME')} className="w-full text-zinc-600 text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-colors mt-4">Safe Disconnect</button>
+              <button
+                onClick={() => setView('HOME')}
+                className="w-full text-zinc-600 text-[10px] font-black uppercase tracking-[0.4em] hover:text-white transition-colors py-4"
+              >
+                Abort Connection
+              </button>
             </div>
           </div>
         )}
 
         {view === 'ADMIN_DASHBOARD' && currentUser && (
-          <div className="space-y-8 animate-in slide-in-from-bottom-6 duration-500">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-black flex items-center gap-3 uppercase tracking-tight">
-                <Settings className="w-6 h-6 text-blue-500" /> TCS Hub
-              </h2>
-              <button onClick={handleLogout} className="text-red-500 text-[10px] font-black tracking-widest uppercase flex items-center gap-2 border border-red-900/20 px-5 py-2 rounded-full bg-red-900/5 hover:bg-red-900/20 transition-all shadow-lg">
-                <LogOut className="w-3.5 h-3.5" /> SHUTDOWN
-              </button>
-            </div>
-
-            <div className="bg-zinc-900/80 border border-zinc-800 p-6 rounded-[2.5rem] flex items-center justify-between shadow-2xl">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-600/10 rounded-2xl border border-blue-600/20">
-                  <UserCircle className="w-10 h-10 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-black uppercase tracking-widest text-white">{currentUser.name}</p>
-                  <p className="text-[10px] text-zinc-500 uppercase font-black tracking-tighter opacity-60">Admin: @{currentUser.username}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setView('PROFILE_MGMT')}
-                className="bg-white/5 text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-all shadow-inner"
-              >
-                Accounts
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-6 bg-zinc-900/40 p-8 rounded-[2.5rem] border border-white/5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-black text-zinc-400 uppercase tracking-[0.4em]">Inventory Control</h3>
-                <button onClick={downloadCSVTemplate} className="flex items-center gap-2 text-[10px] font-black bg-zinc-800 text-zinc-400 border border-white/5 px-5 py-2.5 rounded-2xl hover:bg-zinc-700 transition-all shadow-sm">
-                  <Download className="w-4 h-4" /> EXCEL TEMPLATE
-                </button>
-              </div>
-              <div className="flex gap-4">
-                <label className="flex-1 cursor-pointer flex items-center justify-center gap-3 text-[11px] font-black bg-green-600/10 text-green-500 border border-green-600/20 px-6 py-5 rounded-[1.5rem] hover:bg-green-600/20 transition-all uppercase tracking-widest shadow-2xl">
-                  <Upload className="w-5 h-5" /> BULK UPSERT
-                  <input type="file" accept=".csv" className="hidden" onChange={handleCSVUpload} />
-                </label>
-                <button
-                  onClick={() => setEditingEng({
-                    id: '', name: '', code: '', photoUrl: 'https://picsum.photos/200', asc: '', partnerName: '', month: 'March', year: '2025',
-                    examScore: 0, monthlyRNPS: 0, trainingAttendance: 0, repeatedRepairRatio: 0, sameSymptomRedoRatio: 0,
-                    iqcSkipRatio: 0, oqcFirstTimeFailRatio: 0, corePartsUsed: 0, multiPartsUsed: 0,
-                    lastQEvaluation: 0, tcsScore: 0, tier: 'Bronze'
-                  })}
-                  className="flex items-center gap-3 text-[11px] font-black bg-blue-600 text-white px-8 py-5 rounded-[1.5rem] hover:bg-blue-500 transition-all uppercase tracking-widest shadow-2xl shadow-blue-900/30"
-                >
-                  <Plus className="w-5 h-5" /> MANUAL ENTRY
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 mb-4">
-              <button onClick={() => setNoEngineers(!noEngineers)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors">
-                <Eye className="w-4 h-4" />
-                {noEngineers ? "Hide Archived" : "Show Archived"}
-              </button>
-              {fetchedHiddenEngineers.length > 0 && (
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 bg-zinc-900 px-2 py-1 rounded-full">
-                  {fetchedHiddenEngineers.length}
-                </span>
-              )}
-            </div>
-
-            {noEngineers && (
-              fetchedHiddenEngineers.map(eng => (
-                <div key={eng.id} className="bg-red-900/10 p-5 rounded-3xl border border-red-900/20 flex items-center justify-between group hover:border-red-500/30 transition-all duration-300 shadow-lg opacity-75 hover:opacity-100">
-                  <div className="flex items-center gap-5">
-                    <div className="relative">
-                      <img src={eng.photoUrl} className="w-14 h-14 rounded-2xl object-cover grayscale brightness-50" alt={eng.name} />
-                    </div>
-                    <div>
-                      <p className="text-base font-black tracking-tight text-white/50 uppercase line-throughDecoration">{eng.name}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[10px] text-zinc-600 font-mono font-black tracking-widest uppercase">{eng.code}</span>
-                        <span className="text-[8px] font-black uppercase px-2.5 py-1 rounded-full bg-red-900/20 text-red-500 border border-red-900/30">ARCHIVED</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => restoreEngineerHandler(eng.id)} className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-green-600 text-zinc-400 hover:text-white rounded-xl transition-all font-black text-[10px] uppercase tracking-widest">
-                    <Upload className="w-3 h-3" /> Restore
-                  </button>
-                </div>
-              ))
-            )}
-
-
-            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar p-2">
-              {sortedEngineers.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <p className="text-zinc-500">No engineers found</p>
-                </div>
-              ) : sortedEngineers.map(eng => (
-                <div key={eng.id} className="bg-zinc-900/40 p-5 rounded-3xl border border-zinc-800/50 flex items-center justify-between group hover:border-zinc-500/50 hover:bg-zinc-900 transition-all duration-300 shadow-lg">
-                  <div className="flex items-center gap-5">
-                    <div className="relative">
-                      <img src={eng.photoUrl} className="w-14 h-14 rounded-2xl object-cover grayscale-50 group-hover:grayscale-0 transition-all shadow-xl" alt={eng.name} />
-                      <div className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-blue-600 border-2 border-zinc-900" />
-                    </div>
-                    <div>
-                      <p className="text-base font-black tracking-tight text-white/90 uppercase">{eng.name}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[10px] text-zinc-500 font-mono font-black tracking-widest uppercase">{eng.code}</span>
-                        <span className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-full bg-black/50 border border-zinc-800/80 ${getTierColor(eng.tier)}`}>{eng.tier}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-xl font-black text-blue-500 tracking-tighter">{eng.tcsScore}</p>
-                      <p className="text-[8px] text-zinc-500 uppercase font-black tracking-widest">{eng.month} {eng.year}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditingEng(eng)} className="p-3.5 bg-zinc-800 rounded-2xl hover:bg-zinc-700 hover:text-white transition-all shadow-inner">
-                        <Edit2 className="w-4 h-4 text-zinc-400" />
-                      </button>
-                      <button onClick={() => deleteEngineerHandler(eng.id)} className="p-3.5 bg-zinc-800 rounded-2xl hover:bg-red-900/20 hover:text-red-500 transition-all shadow-inner group/delete">
-                        <Trash2 className="w-4 h-4 text-zinc-400 group-hover/delete:text-red-500 transition-colors" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-              }
-            </div>
-          </div>
-        )}
-
-        {view === 'PROFILE_MGMT' && (
-          <div className="space-y-8 animate-in slide-in-from-right-6 duration-500">
-            <div className="flex items-center justify-between">
-              <button onClick={() => setView('ADMIN_DASHBOARD')} className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 hover:text-white transition-all bg-white/5 px-5 py-2 rounded-full">
-                <ChevronRight className="w-4 h-4 rotate-180" /> Dashboard
-              </button>
-              <h3 className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-600">Admin Directory</h3>
-            </div>
-
-            <div className="bg-zinc-900/60 border border-zinc-800 rounded-[3rem] p-8 space-y-8 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-green-600/10 rounded-2xl">
-                    <UserPlus className="w-6 h-6 text-green-500" />
-                  </div>
-                  <h4 className="text-lg font-black uppercase tracking-tight">Provision Account</h4>
-                </div>
-                <button
-                  onClick={() => setShowAddAdmin(!showAddAdmin)}
-                  className={`p-3 rounded-2xl transition-all shadow-xl ${showAddAdmin ? 'bg-zinc-800 text-zinc-500' : 'bg-green-600 text-white'}`}
-                >
-                  {showAddAdmin ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {showAddAdmin && (
-                <div className="space-y-5 animate-in slide-in-from-top-4 duration-500">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-500 ml-4 tracking-widest">Legal Name</label>
-                      <input
-                        type="text"
-                        placeholder="John Doe"
-                        className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm outline-none focus:border-green-600 font-bold"
-                        value={newAdminData.name}
-                        onChange={e => setNewAdminData({ ...newAdminData, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-500 ml-4 tracking-widest">Public Identifier</label>
-                      <input
-                        type="text"
-                        placeholder="username"
-                        className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm outline-none focus:border-green-600 font-bold"
-                        value={newAdminData.username}
-                        onChange={e => setNewAdminData({ ...newAdminData, username: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-zinc-500 ml-4 tracking-widest">Security Key</label>
-                      <input
-                        type="password"
-                        placeholder="********"
-                        className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm outline-none focus:border-green-600 font-bold"
-                        value={newAdminData.password}
-                        onChange={e => setNewAdminData({ ...newAdminData, password: e.target.value })}
-                      />
-                    </div>
-                    <button
-                      onClick={handleAddAdmin}
-                      className="w-full bg-green-600 py-5 rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:bg-green-500 transition-all shadow-2xl mt-4"
-                    >
-                      Authorize Admin Node
-                    </button>
-                  </div>
-                </div>
-              )}
-
+          <div className="space-y-16 animate-in slide-in-from-bottom-8 duration-700">
+            {/* Dashboard Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-white/5 pb-12">
               <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-2">Active Profiles</h4>
-                {admins.map(admin => (
-                  <div key={admin.id} className="bg-black/40 border border-zinc-800/50 p-6 rounded-[1.5rem] flex items-center justify-between group hover:border-blue-500/20 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-zinc-800/50 rounded-2xl flex items-center justify-center text-zinc-600 border border-white/5">
-                        <UserCircle className="w-7 h-7" />
+                <div className="flex items-center gap-4">
+                  <div className="h-[2px] w-12 bg-blue-500" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500">Command Center</span>
+                </div>
+                <h2 className="text-6xl font-black tracking-tighter text-white uppercase italic leading-none">TCS HUB<br />CONTROL</h2>
+              </div>
+
+              <div className="flex items-center gap-6 bg-zinc-900/50 p-6 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+                <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-600/20">
+                  <UserCircle className="w-6 h-6 text-blue-500" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">Authorized Operator</span>
+                  <span className="text-sm font-black text-white uppercase">{currentUser.name}</span>
+                </div>
+                <div className="h-10 w-[1px] bg-zinc-800 mx-2" />
+                <button
+                  onClick={handleLogout}
+                  className="p-4 bg-red-600/10 text-red-500 rounded-2xl hover:bg-red-600 hover:text-white transition-all group"
+                >
+                  <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Management Suite */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 glass-card rounded-[3rem] p-10 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-12">
+                  <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Operations Unit</h3>
+                  <button onClick={() => setView('PROFILE_MGMT')} className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:underline">Manage Accounts</button>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <button
+                    onClick={() => setEditingEng({
+                      id: '', name: '', code: '', photoUrl: 'https://picsum.photos/200', asc: '', partnerName: '', month: 'March', year: '2026',
+                      examScore: 0, monthlyRNPS: 0, trainingAttendance: 0, repeatedRepairRatio: 0, sameSymptomRedoRatio: 0,
+                      iqcSkipRatio: 0, oqcFirstTimeFailRatio: 0, corePartsUsed: 0, multiPartsUsed: 0,
+                      lastQEvaluation: 0, tcsScore: 0, tier: 'Bronze'
+                    })}
+                    className="flex-1 bg-white text-black px-8 py-6 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all shadow-2xl"
+                  >
+                    <Plus className="w-4 h-4" /> Manual Provisioning
+                  </button>
+                  <label className="flex-1 cursor-pointer flex items-center justify-center gap-3 bg-zinc-800 text-white px-8 py-6 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-zinc-700 transition-all border border-white/5 shadow-2xl">
+                    <Upload className="w-4 h-4" /> Bulk Upload (CSV)
+                    <input type="file" accept=".csv" className="hidden" onChange={handleCSVUpload} />
+                  </label>
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 border border-white/5 rounded-[3rem] p-10 flex flex-col group hover:border-blue-500/30 transition-all">
+                <div className="w-12 h-12 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 group-hover:bg-blue-600/10 group-hover:text-blue-500 transition-all mb-8 shadow-inner">
+                  <Download className="w-5 h-5" />
+                </div>
+                <h4 className="text-xl font-black text-white uppercase tracking-tighter mb-4">Schema Integration</h4>
+                <p className="text-zinc-500 text-xs font-medium mb-8 leading-relaxed">Download the latest data structure template for system integration.</p>
+                <button
+                  onClick={downloadCSVTemplate}
+                  className="mt-auto px-6 py-4 bg-zinc-800 text-zinc-300 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+                >
+                  Download .CSV Template
+                </button>
+              </div>
+            </div>
+
+            {/* Live Registry Section */}
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-[1px] w-8 bg-zinc-800" />
+                  <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Live Engineer Registry</h3>
+                </div>
+                <button
+                  onClick={() => setNoEngineers(!noEngineers)}
+                  className="flex items-center gap-3 px-6 py-3 bg-zinc-900 border border-white/5 rounded-full text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-all shadow-xl"
+                >
+                  <Eye className="w-4 h-4" />
+                  {noEngineers ? "Minimize Archives" : "Inspect Archives"}
+                </button>
+              </div>
+
+              {/* Archive Stack */}
+              {noEngineers && fetchedHiddenEngineers.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-4 duration-500">
+                  {fetchedHiddenEngineers.map(eng => (
+                    <div key={eng.id} className="bg-red-950/10 border border-red-900/20 p-6 rounded-3xl flex items-center justify-between group hover:bg-red-900/20 transition-all">
+                      <div className="flex items-center gap-5">
+                        <img src={eng.photoUrl} className="w-12 h-12 rounded-xl object-cover grayscale opacity-40 shadow-2xl" alt={eng.name} />
+                        <div>
+                          <p className="text-sm font-black text-zinc-500 uppercase tracking-tight line-through opacity-50">{eng.name}</p>
+                          <span className="text-[9px] font-black text-red-500 tracking-widest uppercase mt-1 block">ARCHIVED : {eng.code}</span>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-black uppercase tracking-tight text-white/90">
-                          {admin.name}
-                          {admin.role === 'SUPER_ADMIN' && <span className="text-[7px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full ml-2 border border-yellow-500/20 font-black">SUPER</span>}
-                        </p>
-                        <p className="text-[10px] text-zinc-600 uppercase font-black tracking-widest mt-0.5">@{admin.username}</p>
+                      <button
+                        onClick={() => restoreEngineerHandler(eng.id)}
+                        className="p-4 bg-zinc-900 text-zinc-500 rounded-xl hover:bg-green-600 hover:text-white transition-all"
+                      >
+                        <Upload className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Active Registry Stack */}
+              <div className="grid grid-cols-1 gap-px bg-white/5 border border-white/5 rounded-[3rem] overflow-hidden shadow-3xl">
+                {sortedEngineers.length === 0 ? (
+                  <div className="p-24 text-center text-zinc-700 italic font-black uppercase tracking-[0.3em]">No registry entries detected.</div>
+                ) : sortedEngineers.map(eng => (
+                  <div key={eng.id} className="bg-black hover:bg-zinc-900/50 transition-all p-8 flex items-center justify-between group">
+                    <div className="flex items-center gap-8">
+                      <div className="w-16 h-16 relative">
+                        <img src={eng.photoUrl} className="w-full h-full rounded-2xl object-cover grayscale-50 group-hover:grayscale-0 transition-all shadow-2xl shadow-black/80" alt={eng.name} />
+                        <div className={`absolute -top-2 -left-2 w-5 h-5 rounded-full border-4 border-black ${getTierColor(eng.tier)}`} />
+                      </div>
+                      <div className="flex flex-col">
+                        <h4 className="text-lg font-black text-white uppercase tracking-tighter group-hover:text-blue-500 transition-colors uppercase">{eng.name}</h4>
+                        <div className="flex items-center gap-4 mt-1">
+                          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">{eng.code}</span>
+                          <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1 bg-zinc-900 border border-white/5 rounded-full ${getTierColor(eng.tier)}`}>{eng.tier} Specialist</span>
+                        </div>
                       </div>
                     </div>
-                    {admin.id !== '1' && (
-                      <button
-                        onClick={() => deleteAdminHandler(admin.id)}
-                        className="p-3 text-zinc-700 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
+
+                    <div className="flex items-center gap-12">
+                      <div className="text-right flex flex-col items-end">
+                        <span className="text-2xl font-black text-white tracking-widest italic">{eng.tcsScore}</span>
+                        <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mt-1">Registry Index</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingEng(eng)}
+                          className="p-4 bg-zinc-900 text-zinc-500 rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteEngineerHandler(eng.id)}
+                          className="p-4 bg-zinc-900 text-zinc-500 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -807,193 +870,304 @@ const PageContent = () => {
           </div>
         )}
 
-        {view === 'ENGINEER_PROFILE' && selectedEngineer && (
-          <div className="space-y-10 animate-in zoom-in-95 duration-700">
-            <div className="flex items-center justify-between">
-              <button onClick={() => setView('ENGINEER_LOOKUP')} className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-2 hover:text-white transition-all bg-white/5 px-4 py-2 rounded-full border border-white/5">
-                <ChevronRight className="w-4 h-4 rotate-180" /> Back to Search
+        {view === 'PROFILE_MGMT' && (
+          <div className="space-y-12 animate-in slide-in-from-right-8 duration-700">
+            <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-8 border-b border-white/5 pb-10">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-[2px] w-12 bg-white" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-500">Security Infrastructure</span>
+                </div>
+                <h2 className="text-6xl font-black tracking-tighter text-white uppercase italic leading-none">ADMIN<br />DIRECTORY</h2>
+              </div>
+              <button
+                onClick={() => setView('ADMIN_DASHBOARD')}
+                className="flex items-center gap-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-all bg-white/5 px-6 py-3 rounded-full border border-white/10"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" /> Return to Command
               </button>
-              <div className={`px-5 py-2 rounded-full border text-[11px] font-black uppercase tracking-[0.2em] shadow-xl ${getTierColor(selectedEngineer.tier)}`}>
-                {selectedEngineer.tier} Tier
-              </div>
             </div>
 
-            <div className="flex flex-col items-center gap-6">
-              <div className="relative group">
-                <img src={selectedEngineer.photoUrl} className="w-40 h-40 rounded-[3rem] border-4 border-zinc-800 object-cover shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all group-hover:scale-105" alt={selectedEngineer.name} />
-                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-white text-black font-black px-8 py-3 rounded-2xl text-4xl shadow-[0_15px_30px_rgba(255,255,255,0.15)] flex flex-col items-center border border-zinc-300 transform group-hover:-translate-y-1 transition-transform">
-                  <span className="tracking-tighter">{selectedEngineer.tcsScore}</span>
-                  <span className="text-[10px] uppercase -mt-2 opacity-50 tracking-[0.1em] font-black">Total TCS</span>
-                </div>
-              </div>
-              <div className="text-center mt-10">
-                <h2 className="text-4xl font-black tracking-tight uppercase text-white/90">{selectedEngineer.name}</h2>
-                <p className="text-sm text-zinc-500 font-mono tracking-[0.5em] uppercase mt-2 opacity-80">{selectedEngineer.code}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-900/60 p-5 rounded-3xl border border-white/5 flex items-center gap-4 shadow-xl">
-                <div className="p-3 bg-blue-600/10 rounded-2xl">
-                  <Activity className="w-6 h-6 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-[9px] uppercase text-zinc-600 font-black tracking-widest">Active Cycle</p>
-                  <p className="font-black text-sm text-white/90 uppercase">{selectedEngineer.month} {selectedEngineer.year}</p>
-                </div>
-              </div>
-              <div className="bg-zinc-900/60 p-5 rounded-3xl border border-white/5 flex items-center gap-4 shadow-xl">
-                <div className="p-3 bg-purple-600/10 rounded-2xl">
-                  <Layers className="w-6 h-6 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-[9px] uppercase text-zinc-600 font-black tracking-widest">Global Index</p>
-                  <p className="font-black text-sm text-white/90">#{sortedEngineers.findIndex(e => e.id === selectedEngineer.id) + 1} / {engineers.length}</p>
-                </div>
-              </div>
-            </div>
-
-            <section className="bg-zinc-900/40 rounded-[3rem] p-8 border border-white/5 space-y-10 shadow-3xl backdrop-blur-sm">
-              <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                <h3 className="text-sm font-black text-white uppercase tracking-[0.4em] flex items-center gap-3">
-                  <BarChart3 className="w-5 h-5 text-blue-500" /> Audit Findings
-                </h3>
-                <span className="text-[10px] text-zinc-700 font-mono font-black tracking-widest">V7.2_FINAL</span>
-              </div>
-              <div className="space-y-10">
-                <div className="space-y-6">
-                  <div className="flex justify-between items-end">
-                    <h4 className="text-[11px] font-black text-blue-400 uppercase tracking-[0.3em]">Engineer Evaluation Pillar (50%)</h4>
-                    <div className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">Performance Weighting</div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              <div className="lg:col-span-5 space-y-8">
+                <div className="glass-card rounded-[3rem] p-10 space-y-10 border-green-500/20 shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] flex items-center gap-3">
+                      <UserPlus className="w-4 h-4 text-green-500" /> Provision Node
+                    </h3>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   </div>
-                  <div className="grid grid-cols-1 gap-8 bg-black/40 p-7 rounded-[2rem] border border-white/5 shadow-inner">
-                    <MetricBar label="Training Attendance" value={selectedEngineer.trainingAttendance} suffix="%" color="bg-green-600" />
-                    <div className="space-y-6 pt-4 border-t border-white/5">
-                      <MetricBar label="Repeated Repair (RRR)" value={selectedEngineer.repeatedRepairRatio} suffix="%" inverse />
-                      <MetricBar label="Same Symptom Redo (SSR)" value={selectedEngineer.sameSymptomRedoRatio} suffix="%" inverse />
-                      <MetricBar label="IQC Skip Ratio" value={selectedEngineer.iqcSkipRatio} suffix="%" inverse />
-                      <MetricBar label="OQC First Fail Ratio" value={selectedEngineer.oqcFirstTimeFailRatio} suffix="%" inverse />
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Full Identity</label>
+                      <input
+                        type="text"
+                        placeholder="NAME_ALPHA"
+                        className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm outline-none focus:border-green-600 font-bold text-white shadow-inner"
+                        value={newAdminData.name}
+                        onChange={e => setNewAdminData({ ...newAdminData, name: e.target.value })}
+                      />
                     </div>
-                    <div className="grid grid-cols-2 gap-6 border-t border-white/5 pt-6">
-                      <MetricBar label="Core Parts Used" value={selectedEngineer.corePartsUsed} suffix="%" inverse />
-                      <MetricBar label="Multi Parts Used" value={selectedEngineer.multiPartsUsed} suffix="%" inverse />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Access Identifier</label>
+                      <input
+                        type="text"
+                        placeholder="USERNAME_SIGMA"
+                        className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm outline-none focus:border-green-600 font-bold text-white shadow-inner"
+                        value={newAdminData.username}
+                        onChange={e => setNewAdminData({ ...newAdminData, username: e.target.value })}
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Secure Key</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm outline-none focus:border-green-600 font-bold text-white shadow-inner"
+                        value={newAdminData.password}
+                        onChange={e => setNewAdminData({ ...newAdminData, password: e.target.value })}
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddAdmin}
+                      className="w-full bg-green-600 text-white py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] hover:bg-green-500 transition-all shadow-2xl shadow-green-900/40 mt-6"
+                    >
+                      Initialize Provisioning
+                    </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-6 pt-6 border-t border-white/5">
-                  <MetricBar label="TCS Exam Performance (30%)" value={selectedEngineer.examScore} suffix=" pts" color="bg-blue-600" />
-                  <MetricBar label="Monthly RNPS Score (20%)" value={selectedEngineer.monthlyRNPS} suffix=" pts" color="bg-yellow-600" />
+              </div>
+
+              <div className="lg:col-span-7 space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-[1px] w-8 bg-zinc-800" />
+                  <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Active Operations Nodes</h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {admins.map(admin => (
+                    <div key={admin.id} className="bg-zinc-900/50 hover:bg-zinc-900 transition-all p-8 rounded-[2.5rem] border border-white/5 flex items-center justify-between group">
+                      <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-zinc-700 border border-white/5 group-hover:text-blue-500 transition-colors shadow-inner">
+                          <UserCircle className="w-8 h-8" />
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl font-black text-white uppercase tracking-tighter">{admin.name}</span>
+                            {admin.role === 'SUPER_ADMIN' && <span className="text-[8px] bg-blue-600/10 text-blue-500 px-3 py-1 rounded-full border border-blue-600/20 font-black tracking-widest uppercase">System Root</span>}
+                          </div>
+                          <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1">@ACCESS_ID: {admin.username}</span>
+                        </div>
+                      </div>
+                      {admin.id !== '1' && (
+                        <button
+                          onClick={() => deleteAdminHandler(admin.id)}
+                          className="p-5 bg-black text-zinc-700 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-            </section>
+            </div>
+          </div>
+        )}
+
+        {view === 'ENGINEER_PROFILE' && selectedEngineer && (
+          <div className="space-y-16 animate-in slide-in-from-right-8 duration-700">
+            {/* Dossier Header */}
+            <div className="flex flex-col md:flex-row items-center md:items-end justify-between gap-12 border-b border-white/5 pb-16">
+              <div className="flex flex-col items-center md:items-start gap-8">
+                <div className="relative group">
+                  <div className="absolute -inset-4 bg-blue-600/20 blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
+                  <img src={selectedEngineer.photoUrl} className="relative z-10 w-48 h-48 rounded-[3.5rem] object-cover border-4 border-zinc-800 shadow-3xl grayscale-50 group-hover:grayscale-0 transition-all duration-500" alt={selectedEngineer.name} />
+                  <div className={`absolute -bottom-4 -right-4 w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black shadow-2xl border-4 border-black z-20 ${getTierColor(selectedEngineer.tier)}`}>
+                    {selectedEngineer.tier[0]}
+                  </div>
+                </div>
+                <div className="text-center md:text-left space-y-2">
+                  <div className="flex items-center justify-center md:justify-start gap-3">
+                    <div className="h-[1px] w-8 bg-blue-500" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500">Personnel Dossier</span>
+                  </div>
+                  <h2 className="text-5xl font-black tracking-tighter text-white uppercase italic">{selectedEngineer.name}</h2>
+                  <p className="text-zinc-500 font-mono text-[10px] uppercase tracking-[0.6em]">{selectedEngineer.code}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-4">
+                <div className="glass-card px-10 py-6 rounded-3xl flex flex-col items-end border-blue-500/20 shadow-2xl">
+                  <span className="text-6xl font-black text-white italic tracking-tighter">{selectedEngineer.tcsScore}</span>
+                  <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest">Aggregate Capability Index</span>
+                </div>
+                <button
+                  onClick={() => setView('ENGINEER_LOOKUP')}
+                  className="flex items-center gap-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest hover:text-white transition-all"
+                >
+                  <ChevronRight className="w-4 h-4 rotate-180" /> Back to Registry
+                </button>
+              </div>
+            </div>
+
+            {/* Capability Metrics Matrix */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="glass-card rounded-[3rem] p-10 space-y-8 md:col-span-2">
+                <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                  <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] flex items-center gap-3">
+                    <Activity className="w-4 h-4 text-blue-500" /> Performance Analysis
+                  </h3>
+                  <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest">Ref: CY-2026/01</span>
+                </div>
+
+                <div className="space-y-12 py-4">
+                  <div className="space-y-6">
+                    <MetricBar label="TCS Examination Score" value={selectedEngineer.examScore} suffix=" pts" color="bg-blue-600" />
+                    <MetricBar label="Monthly RNPS" value={selectedEngineer.monthlyRNPS} suffix=" pts" color="bg-zinc-100" />
+                    <MetricBar label="Core Competency Training" value={selectedEngineer.trainingAttendance} suffix="%" color="bg-green-600" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 pt-12 border-t border-white/5">
+                    <MetricBar label="Repeated Repair (RRR)" value={selectedEngineer.repeatedRepairRatio} suffix="%" inverse />
+                    <MetricBar label="Same Symptom Redo (SSR)" value={selectedEngineer.sameSymptomRedoRatio} suffix="%" inverse />
+                    <MetricBar label="IQC Non-Compliance" value={selectedEngineer.iqcSkipRatio} suffix="%" inverse />
+                    <MetricBar label="OQC First Fail Rate" value={selectedEngineer.oqcFirstTimeFailRatio} suffix="%" inverse />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                <div className="bg-zinc-900 border border-white/5 rounded-[3rem] p-10 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 mb-8 border border-blue-600/20">
+                    <Layers className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-4">Global Network Rank</h4>
+                  <span className="text-5xl font-black text-white italic tracking-tighter mb-2">#{sortedEngineers.findIndex(e => e.id === selectedEngineer.id) + 1}</span>
+                  <p className="text-zinc-600 text-[10px] font-medium uppercase tracking-widest">Top {Math.round(((sortedEngineers.findIndex(e => e.id === selectedEngineer.id) + 1) / engineers.length) * 100)}% of global talent</p>
+                </div>
+
+                <div className="glass-card rounded-[3rem] p-10">
+                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-10">Audit Metadata</h4>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-600 uppercase">Cycle</span>
+                      <span className="text-xs font-black text-white uppercase">{selectedEngineer.month} {selectedEngineer.year}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-600 uppercase">Tier Status</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${getTierColor(selectedEngineer.tier)}`}>{selectedEngineer.tier}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-600 uppercase">Auth Code</span>
+                      <span className="text-[10px] font-mono text-zinc-400">0x-SH-{selectedEngineer.code.split('-')[1]}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Compliance Watermark */}
+            <div className="pt-12 text-center opacity-20 select-none pointer-events-none">
+              <p className="text-[8px] font-black uppercase tracking-[1em] text-zinc-500">Official TCS Certification Document • Unauthorized reproduction prohibited</p>
+            </div>
           </div>
         )}
 
         {/* Upsert Modal (Manual Entry) */}
         {editingEng && (
-          <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[100] flex items-center justify-center p-4">
-            <div className="bg-zinc-900 border border-white/10 w-full max-w-lg rounded-[3.5rem] p-10 shadow-3xl max-h-[92vh] overflow-y-auto custom-scrollbar">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-2xl font-black uppercase tracking-tight text-white/90">
-                  {editingEng.id ? 'Modify Record' : 'Create Record'}
-                </h2>
-                <button onClick={() => setEditingEng(null)} className="p-3.5 bg-zinc-800 rounded-full hover:bg-red-500/20 hover:text-red-500 transition-all shadow-xl">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+          <div className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-[100] flex items-center justify-center p-6 sm:p-12 overflow-y-auto custom-scrollbar">
+            <div className="bg-zinc-950 border border-white/10 w-full max-w-4xl rounded-[4rem] p-12 md:p-20 shadow-3xl relative my-auto">
+              <button
+                onClick={() => setEditingEng(null)}
+                className="absolute top-10 right-10 p-6 bg-zinc-900 rounded-full hover:bg-white hover:text-black transition-all shadow-3xl rotate-0 hover:rotate-90"
+              >
+                <X className="w-8 h-8" />
+              </button>
 
-              {/* Photo Edit Section */}
-              <div className="flex flex-col items-center mb-10 group">
-                <div
-                  className="relative w-32 h-32 rounded-[2rem] border-4 border-zinc-800 overflow-hidden cursor-pointer shadow-2xl transition-all hover:border-blue-500"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <img src={editingEng.photoUrl} className="w-full h-full object-cover" alt="Profile" />
-                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
-                    <Camera className="w-6 h-6 text-white mb-1" />
-                    <span className="text-[8px] font-black uppercase text-white tracking-widest">Update</span>
-                  </div>
-                </div>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                />
-                <p className="text-[10px] text-zinc-600 mt-4 font-black uppercase tracking-widest">Engineer Identification Photo</p>
-              </div>
-
-              <div className="space-y-10">
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-1.5 col-span-2">
-                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-4">Audit Period (Month & Year)</label>
-                    <div className="flex gap-3">
-                      <input className="flex-1 bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm focus:border-blue-500 outline-none font-bold" value={editingEng.month} onChange={e => setEditingEng({ ...editingEng, month: e.target.value })} placeholder="Month" />
-                      <input className="w-32 bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm focus:border-blue-500 outline-none font-bold" value={editingEng.year} onChange={e => setEditingEng({ ...editingEng, year: e.target.value })} placeholder="Year" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-4">Full Name</label>
-                    <input className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm font-bold focus:border-blue-500 outline-none" value={editingEng.name} onChange={e => setEditingEng({ ...editingEng, name: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-4">Engineer Code</label>
-                    <input className="w-full bg-black/50 border border-zinc-800 rounded-2xl p-4 text-sm font-bold focus:border-blue-500 outline-none" value={editingEng.code} onChange={e => setEditingEng({ ...editingEng, code: e.target.value.toUpperCase() })} />
-                  </div>
-                </div>
-
-                <div className="space-y-8 bg-black/50 p-8 rounded-[2.5rem] border border-white/5 shadow-inner">
-                  <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] border-b border-zinc-800 pb-4 mb-6">Primary Scoring Metrics</h3>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-zinc-500 uppercase ml-3">Exam (30%) (+)</label>
-                      <input type="number" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-3.5 text-sm font-bold focus:border-white transition-all outline-none" value={editingEng.examScore} onChange={e => setEditingEng({ ...editingEng, examScore: parseFloat(e.target.value) || 0 })} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-zinc-500 uppercase ml-3">RNPS (20%) (+)</label>
-                      <input type="number" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-3.5 text-sm font-bold focus:border-white transition-all outline-none" value={editingEng.monthlyRNPS} onChange={e => setEditingEng({ ...editingEng, monthlyRNPS: parseFloat(e.target.value) || 0 })} />
-                    </div>
-                  </div>
-
-                  <h3 className="text-[10px] font-black text-purple-500 uppercase tracking-[0.4em] pt-6">Engineer Evaluation (50%)</h3>
-                  <div className="grid grid-cols-2 gap-5">
-                    <div className="space-y-1.5 col-span-2">
-                      <label className="text-[9px] font-black text-zinc-500 uppercase ml-3">Training Attendance (+)</label>
-                      <input type="number" step="0.1" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-3.5 text-sm font-bold focus:border-white transition-all outline-none" value={editingEng.trainingAttendance} onChange={e => setEditingEng({ ...editingEng, trainingAttendance: parseFloat(e.target.value) || 0 })} />
-                    </div>
-                    {[
-                      { k: 'repeatedRepairRatio', l: 'RRR % (-)' },
-                      { k: 'sameSymptomRedoRatio', l: 'SSR % (-)' },
-                      { k: 'iqcSkipRatio', l: 'IQC Skip % (-)' },
-                      { k: 'oqcFirstTimeFailRatio', l: 'OQC Fail % (-)' },
-                      { k: 'corePartsUsed', l: 'Core Parts (-)' },
-                      { k: 'multiPartsUsed', l: 'Multi Parts (-)' },
-                    ].map(item => (
-                      <div key={item.k} className="space-y-1.5">
-                        <label className="text-[9px] font-black text-zinc-500 uppercase ml-3">{item.l}</label>
-                        <input type="number" step="0.1" className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl p-3.5 text-sm font-bold focus:border-white transition-all outline-none" value={editingEng[item.k]} onChange={e => setEditingEng({ ...editingEng, [item.k]: parseFloat(e.target.value) || 0 })} />
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+                <div className="lg:col-span-4 flex flex-col items-center space-y-12">
+                  <div className="relative group">
+                    <div className="absolute -inset-8 bg-blue-600/10 blur-[80px] rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" />
+                    <div
+                      className="relative w-56 h-56 rounded-[4rem] border-4 border-zinc-800 overflow-hidden cursor-pointer shadow-3xl transition-all hover:border-blue-500 overflow-hidden group"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <img src={editingEng.photoUrl} className="w-full h-full object-cover grayscale-50 group-hover:grayscale-0 transition-all" alt="Profile" />
+                      <div className="absolute inset-0 bg-blue-600/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                        <Camera className="w-10 h-10 text-white mb-2" />
+                        <span className="text-[10px] font-black uppercase text-white tracking-[0.3em]">Update Capture</span>
                       </div>
-                    ))}
+                    </div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                  </div>
+                  <div className="text-center space-y-4">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="h-[2px] w-8 bg-blue-500" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500">Record Control</span>
+                    </div>
+                    <h2 className="text-3xl font-black text-white uppercase italic leading-none">{editingEng.id ? 'Modify Data' : 'New Provision'}</h2>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => saveEngineer(editingEng)}
-                  disabled={isSaving}
-                  className={`w-full py-6 rounded-3xl font-black text-lg flex items-center justify-center gap-4 transition-all uppercase tracking-[0.3em] shadow-3xl ${isSaving ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-50 hover:bg-blue-500 active:scale-[0.98] shadow-blue-900/40'}`}
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-zinc-500 border-t-white rounded-full animate-spin" />
-                      SECURELY SAVING...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-6 h-6" /> Commit Record
-                    </>
-                  )}
-                </button>
+                <div className="lg:col-span-8 space-y-12">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Full Operational Name</label>
+                      <input className="w-full bg-black border border-white/5 rounded-2xl p-6 text-base font-bold text-white focus:border-blue-500 outline-none shadow-inner" value={editingEng.name} onChange={e => setEditingEng({ ...editingEng, name: e.target.value })} />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Engineer Protocol Code</label>
+                      <input className="w-full bg-black border border-white/5 rounded-2xl p-6 text-base font-bold text-white focus:border-blue-500 outline-none shadow-inner" value={editingEng.code} onChange={e => setEditingEng({ ...editingEng, code: e.target.value.toUpperCase() })} />
+                    </div>
+                    <div className="space-y-3 md:col-span-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Active Audit Period</label>
+                      <div className="flex gap-4">
+                        <input className="flex-1 bg-black border border-white/5 rounded-2xl p-6 text-base font-bold text-white focus:border-blue-500 outline-none shadow-inner" value={editingEng.month} onChange={e => setEditingEng({ ...editingEng, month: e.target.value })} placeholder="Month" />
+                        <input className="w-40 bg-black border border-white/5 rounded-2xl p-6 text-base font-bold text-white focus:border-blue-500 outline-none shadow-inner" value={editingEng.year} onChange={e => setEditingEng({ ...editingEng, year: e.target.value })} placeholder="Year" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-zinc-900/50 p-10 rounded-[3rem] border border-white/5 space-y-10">
+                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] border-b border-white/5 pb-6">Capability Metrics Allocation</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1">Exam Score (30%)</label>
+                        <input type="number" className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm font-bold text-white focus:border-blue-500 outline-none" value={editingEng.examScore} onChange={e => setEditingEng({ ...editingEng, examScore: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-black text-yellow-500 uppercase tracking-widest ml-1">RNPS Score (20%)</label>
+                        <input type="number" className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm font-bold text-white focus:border-blue-500 outline-none" value={editingEng.monthlyRNPS} onChange={e => setEditingEng({ ...editingEng, monthlyRNPS: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                      <div className="space-y-4 md:col-span-2">
+                        <label className="text-[10px] font-black text-green-500 uppercase tracking-widest ml-1">Training Attendance (50% Pillar Part A)</label>
+                        <input type="number" step="0.1" className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm font-bold text-white focus:border-blue-500 outline-none" value={editingEng.trainingAttendance} onChange={e => setEditingEng({ ...editingEng, trainingAttendance: parseFloat(e.target.value) || 0 })} />
+                      </div>
+                      {[
+                        { k: 'repeatedRepairRatio', l: 'RRR % (-)', c: 'text-red-500' },
+                        { k: 'sameSymptomRedoRatio', l: 'SSR % (-)', c: 'text-red-500' },
+                        { k: 'iqcSkipRatio', l: 'IQC Non-Comp (-)', c: 'text-red-500' },
+                        { k: 'oqcFirstTimeFailRatio', l: 'OQC Fail Rate (-)', c: 'text-red-500' },
+                      ].map(item => (
+                        <div key={item.k} className="space-y-4">
+                          <label className={`text-[10px] font-black uppercase tracking-widest ml-1 ${item.c}`}>{item.l}</label>
+                          <input type="number" step="0.1" className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm font-bold text-white focus:border-blue-500 outline-none" value={editingEng[item.k]} onChange={e => setEditingEng({ ...editingEng, [item.k]: parseFloat(e.target.value) || 0 })} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => saveEngineer(editingEng)}
+                    disabled={isSaving}
+                    className="w-full bg-white text-black py-8 rounded-[2rem] font-black text-sm uppercase tracking-[0.4em] hover:bg-zinc-200 transition-all shadow-[0_20px_50px_rgba(255,255,255,0.1)] flex items-center justify-center gap-4"
+                  >
+                    {isSaving ? <div className="w-6 h-6 border-4 border-zinc-200 border-t-black rounded-full animate-spin" /> : <Save className="w-6 h-6" />}
+                    {isSaving ? 'Synchronizing Node...' : 'Commit Protocol Entry'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1002,15 +1176,15 @@ const PageContent = () => {
       </main>
 
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[94%] max-w-sm bg-zinc-900/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] py-5 px-10 flex justify-around items-center shadow-[0_30px_60px_rgba(0,0,0,0.8)] z-50">
-        <button onClick={() => setView('HOME')} className={`flex flex-col items-center gap-2 transition-all ${view === 'HOME' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>
+        <button onClick={() => setView('HOME')} className={`cursor-pointer flex flex-col items-center gap-2 transition-all ${view === 'HOME' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>
           <BarChart3 className={`w-6 h-6 ${view === 'HOME' ? 'text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : ''}`} />
           <span className="text-[9px] font-black uppercase tracking-[0.1em]">Status</span>
         </button>
-        <button onClick={() => setView('ENGINEER_LOOKUP')} className={`flex flex-col items-center gap-2 transition-all ${view === 'ENGINEER_LOOKUP' || view === 'ENGINEER_PROFILE' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>
+        <button onClick={() => setView('ENGINEER_LOOKUP')} className={`cursor-pointer flex flex-col items-center gap-2 transition-all ${view === 'ENGINEER_LOOKUP' || view === 'ENGINEER_PROFILE' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>
           <Search className={`w-6 h-6 ${view === 'ENGINEER_LOOKUP' || view === 'ENGINEER_PROFILE' ? 'text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : ''}`} />
           <span className="text-[9px] font-black uppercase tracking-[0.1em]">Search</span>
         </button>
-        <button onClick={() => setView(currentUser ? 'ADMIN_DASHBOARD' : 'ADMIN_LOGIN')} className={`flex flex-col items-center gap-2 transition-all ${view === 'ADMIN_LOGIN' || view === 'ADMIN_DASHBOARD' || view === 'PROFILE_MGMT' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>
+        <button onClick={() => setView(isLogged ? 'ADMIN_DASHBOARD' : 'ADMIN_LOGIN')} className={`cursor-pointer flex flex-col items-center gap-2 transition-all ${view === 'ADMIN_LOGIN' || view === 'ADMIN_DASHBOARD' || view === 'PROFILE_MGMT' ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}`}>
           <ShieldCheck className={`w-6 h-6 ${view === 'ADMIN_LOGIN' || view === 'ADMIN_DASHBOARD' || view === 'PROFILE_MGMT' ? 'text-blue-500 drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]' : ''}`} />
           <span className="text-[9px] font-black uppercase tracking-[0.1em]">Secure</span>
         </button>
