@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { App, ConfigProvider, theme, message as antdMessage } from 'antd';
 import {
   Users,
   ShieldCheck,
@@ -70,7 +71,8 @@ const MetricBar = ({ label, value, max = 100, suffix = "", color = "bg-blue-600"
   );
 };
 
-const Page = () => {
+const PageContent = () => {
+  const { message, modal, notification } = App.useApp();
   const [view, setView] = useState('HOME');
   const [engineers, setEngineers] = useState([]);
   const [admins, setAdmins] = useState([]);
@@ -148,7 +150,7 @@ const Page = () => {
       setSelectedEngineer(found);
       setView('ENGINEER_PROFILE');
     } else {
-      alert("Engineer Code not found. Please verify your credentials.");
+      message.error("Engineer Code not found. Please verify your credentials.");
     }
   };
 
@@ -163,7 +165,7 @@ const Page = () => {
       setLoginPass('');
       setView('ADMIN_DASHBOARD');
     } else {
-      alert("User or Password are wrong");
+      message.error("User or Password are wrong");
     }
   };
 
@@ -202,7 +204,7 @@ const Page = () => {
         }
       } catch (error) {
         console.error("Failed to upload photo:", error);
-        alert("Failed to upload photo. Changes will be saved without new photo.");
+        message.warning("Failed to upload photo. Changes will be saved without new photo.");
       }
     }
 
@@ -239,13 +241,13 @@ const Page = () => {
       setEditingEng(null);
     } catch (error) {
       console.error("Error saving engineer:", error);
-      alert("Error saving engineer. Check console.");
+      message.error("Error saving engineer. Check console.");
     }
   };
 
   const handleAddAdmin = async () => {
     if (!newAdminData.username || !newAdminData.password || !newAdminData.name) {
-      alert("Please fill all fields");
+      message.warning("Please fill all fields");
       return;
     }
     const newAdmin = {
@@ -262,59 +264,79 @@ const Page = () => {
       setAdmins(prev => [...prev, newAdmin]);
       setNewAdminData({ username: '', password: '', name: '' });
       setShowAddAdmin(false);
-      alert("New admin added successfully");
+      message.success("New admin added successfully");
     } catch (error) {
       console.error("Error adding admin:", error);
-      alert("Failed to add admin");
+      message.error("Failed to add admin");
     }
   };
 
   const deleteAdminHandler = async (id) => {
     if (id === currentUser?.id) {
-      alert("You cannot delete yourself");
+      message.error("You cannot delete yourself");
       return;
     }
-    if (window.confirm("Are you sure you want to remove this admin?")) {
-      try {
-        await deleteAdminFromDb(id);
-        setAdmins(prev => prev.filter(a => a.id !== id));
-      } catch (error) {
-        console.error("Error deleting admin:", error);
-        alert("Failed to delete admin");
-      }
-    }
+    modal.confirm({
+      title: 'Remove Admin',
+      content: 'Are you sure you want to remove this admin?',
+      okText: 'Remove',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          await deleteAdminFromDb(id);
+          setAdmins(prev => prev.filter(a => a.id !== id));
+          message.success("Admin removed");
+        } catch (error) {
+          console.error("Error deleting admin:", error);
+          message.error("Failed to delete admin");
+        }
+      },
+    });
   };
 
   const deleteEngineerHandler = async (id) => {
-    if (window.confirm("Are you sure you want to archive this engineer record? The data will be hidden but preserved.")) {
-      try {
-        await archiveEngineer(id);
-        const archivedEng = engineers.find(e => e.id === id);
-        setEngineers(prev => prev.filter(e => e.id !== id));
-        if (archivedEng) {
-          setFetchedHiddenEngineers(prev => [...prev, { ...archivedEng, hidden: true }]);
+    modal.confirm({
+      title: 'Archive Record',
+      content: 'Are you sure you want to archive this engineer record? The data will be hidden but preserved.',
+      okText: 'Archive',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await archiveEngineer(id);
+          const archivedEng = engineers.find(e => e.id === id);
+          setEngineers(prev => prev.filter(e => e.id !== id));
+          if (archivedEng) {
+            setFetchedHiddenEngineers(prev => [...prev, { ...archivedEng, hidden: true }]);
+          }
+          message.success("Engineer archived");
+        } catch (error) {
+          console.error("Error deleting engineer:", error);
+          message.error("Failed to archive engineer record.");
         }
-      } catch (error) {
-        console.error("Error deleting engineer:", error);
-        alert("Failed to archive engineer record.");
       }
-    }
+    });
   };
 
   const restoreEngineerHandler = async (id) => {
-    if (window.confirm("Are you sure you want to restore this engineer?")) {
-      try {
-        await saveEngineerToDb({ id, hidden: false });
-        const restoredEng = fetchedHiddenEngineers.find(e => e.id === id);
-        setFetchedHiddenEngineers(prev => prev.filter(e => e.id !== id));
-        if (restoredEng) {
-          setEngineers(prev => [...prev, { ...restoredEng, hidden: false }]);
+    modal.confirm({
+      title: 'Restore Engineer',
+      content: 'Are you sure you want to restore this engineer?',
+      onOk: async () => {
+        try {
+          await saveEngineerToDb({ id, hidden: false });
+          const restoredEng = fetchedHiddenEngineers.find(e => e.id === id);
+          setFetchedHiddenEngineers(prev => prev.filter(e => e.id !== id));
+          if (restoredEng) {
+            setEngineers(prev => [...prev, { ...restoredEng, hidden: false }]);
+          }
+          message.success("Engineer restored");
+        } catch (error) {
+          console.error("Error restoring engineer:", error);
+          message.error("Failed to restore engineer.");
         }
-      } catch (error) {
-        console.error("Error restoring engineer:", error);
-        alert("Failed to restore engineer.");
       }
-    }
+    });
   };
 
   const downloadCSVTemplate = () => {
@@ -388,10 +410,10 @@ const Page = () => {
               return Array.from(map.values());
             });
 
-            alert(`Success: ${uploadedRecords.length} records processed and saved.`);
+            message.success(`Success: ${uploadedRecords.length} records processed and saved.`);
           } catch (error) {
             console.error("Error uploading CSV data:", error);
-            alert("Error saving CSV data to database.");
+            message.error("Error saving CSV data to database.");
           }
         }
       };
@@ -486,7 +508,7 @@ const Page = () => {
                 <ChevronRight className="w-6 h-6 text-zinc-700 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
               </button>
 
-              <button onClick={() => setView('ADMIN_LOGIN')} className="group relative overflow-hidden flex items-center justify-between p-7 bg-zinc-900/80 rounded-[2rem] border border-zinc-800 hover:border-zinc-500 hover:bg-zinc-900 transition-all active:scale-[0.98] shadow-2xl">
+              <button onClick={() => setView(currentUser ? 'ADMIN_DASHBOARD' : 'ADMIN_LOGIN')} className="group relative overflow-hidden flex items-center justify-between p-7 bg-zinc-900/80 rounded-[2rem] border border-zinc-800 hover:border-zinc-500 hover:bg-zinc-900 transition-all active:scale-[0.98] shadow-2xl">
                 <div className="flex items-center gap-5 relative z-10">
                   <div className="p-4 bg-zinc-700/10 rounded-2xl text-zinc-400 group-hover:scale-110 transition-transform">
                     <ShieldCheck className="w-7 h-7" />
@@ -978,6 +1000,23 @@ const Page = () => {
         </button>
       </nav>
     </div>
+  );
+};
+const Page = () => {
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorPrimary: '#2563eb',
+          borderRadius: 16,
+        },
+      }}
+    >
+      <App>
+        <PageContent />
+      </App>
+    </ConfigProvider>
   );
 };
 
