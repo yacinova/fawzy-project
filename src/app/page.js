@@ -37,9 +37,7 @@ const Header = ({ onHome }) => (
       className="flex items-center gap-2 cursor-pointer group transition-all transform active:scale-95"
       onClick={onHome}
     >
-      <span className="text-5xl font-black tracking-[-0.08em] text-white animate-pulse-subtle group-hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-        SAMSUNG
-      </span>
+      <img src="./sam_logo.png" alt="" className="w-full h-16" />
     </div>
     <h1 className="text-[10px] uppercase tracking-[0.5em] text-zinc-400 mt-3 font-black bg-white/5 px-4 py-1 rounded-full border border-white/10">
       TCS Engineer's Challenge
