@@ -5,17 +5,22 @@ A premium, high-performance **Engineer Technical Capability Score (TCS) Manageme
 ---
 
 ## 🌟 What is this project?
-The **TCS Ecosystem** is a centralized hub for tracking and visualizing engineer performance metrics. It moves beyond standard databases to provide a dynamic, real-time leaderboard ("The Podium") and a secure administrative command center. It implements a sophisticated scoring algorithm to calculate a **Technical Capability Score (TCS)** based on various KPIs, assigning engineers to tiers ranging from **Bronze** to **Supreme**.
+The **TCS Ecosystem** is a centralized hub for tracking and visualizing engineer performance metrics. It moves beyond standard databases to provide a dynamic, real-time leaderboard ("The Podium") and a secure administrative command center. It implements a sophisticated scoring algorithm to calculate a **Technical Capability Score (TCS)** based on comprehensive KPIs, assigning engineers to dynamic tiers ranging from **Bronze** to **Masters**.
 
 ## 🛠️ What it does
 - **Public Capability Audit**: Allows engineers to verify their standing and view their detailed performance profile using unique identification codes.
 - **Dynamic Leaderboard**: Visualizes the top three performers on a premium "Podium" and lists all engineers in a high-impact registry.
-- **Secure Management Node**: A protected admin dashboard for:
+- **Secure Management Node**: An optimized, space-efficient admin dashboard for:
     - **Manual Provisioning**: Adding and editing engineer records with real-time validation.
-    - **Bulk Operations**: Bulk uploading engineer data via CSV templates.
-    - **Asset Management**: Integrated image uploading to Firebase Storage for profile photos.
+    - **Bulk Operations**: Bulk uploading engineer data via CSV templates with newly consolidated UI controls.
+    - **Asset & Document Management**: Integrated image uploading to Firebase Storage and exporting engineer metrics to Word (.docx) and PowerPoint (.pptx).
     - **Data Archiving**: Hiding and restoring engineer records without losing historical data.
-- **Automated Tiering**: Real-time calculation of TCS scores and dynamic tier assignment based on KPIs like Exam Score, RNPS, RRR, and SSR.
+- **Advanced Analytics**: Accurately tracks application usage by separating visitor analytics from administrator session data.
+- **Automated Tiering**: Real-time calculation of TCS scores (out of 100) and dynamic tier assignment based on a weighted algorithm:
+    - **Operational KPIs (50%)**: REDO, IQC Skip Ratio, Maintenance Mode, OQC Pass Rate, Training Attendance, Core Parts PBA, Core Parts Octa, and Multi Parts Ratio.
+    - **DRNPS (30%)**: Derived from Promoter and Detractor feedback counts.
+    - **Exam Score (20%)**.
+    - **Tiers**: Bronze, Silver, Gold, Platinum, Diamond, and Masters.
 
 ## 🏗️ Tech Stack
 - **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
@@ -24,6 +29,7 @@ The **TCS Ecosystem** is a centralized hub for tracking and visualizing engineer
 - **File Storage**: [Firebase Storage](https://firebase.google.com/docs/storage)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 - **UI Components**: [Ant Design 6](https://ant.design/) (Modals, Notifications, Flexible Themes)
+- **Document Generation**: `docx` and `pptxgenjs` for automated reports.
 - **Icons**: [Lucide React](https://lucide.dev/)
 
 ## 📂 Project Structure
