@@ -36,19 +36,27 @@ import {
   MessageSquare,
   Send,
   CheckCircle,
-  Info
+  Info,
+  RefreshCw
 } from 'lucide-react';
 
 import { INITIAL_ENGINEERS, calculateTCS, calculateDRNPS, getTier, getTierColor } from '../constants';
 import { getEngineers, getHiddenEngineers, saveEngineer as saveEngineerToDb, archiveEngineer, getAdmins, saveAdmin as saveAdminToDb, deleteAdmin as deleteAdminFromDb, saveFeedback as saveFeedbackToDb } from '../services/firestoreService';
 
 import { uploadPhoto } from '../services/storageService';
+import { recordVisit, recordAdminLogin, recordSessionEnd, getAnalyticsSummary } from '../services/analyticsService';
+import { writeLog, fetchLogs } from '../services/auditLogService';
 
 // ─── Helper: Month name → quarter ────────────────────────────────────────────
 const MONTH_ORDER = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const getQuarter = (monthName) => {
-  const idx = MONTH_ORDER.findIndex(m => m.toLowerCase() === (monthName || '').toLowerCase());
-  if (idx < 0) return 'Q?';
+  if (!monthName) return null;
+  const mn = monthName.toLowerCase().trim();
+  // Match full name (e.g. "April") OR 3-letter abbreviation (e.g. "Apr")
+  const idx = MONTH_ORDER.findIndex(m =>
+    m.toLowerCase() === mn || m.toLowerCase().startsWith(mn.slice(0, 3))
+  );
+  if (idx < 0) return null;
   return `Q${Math.floor(idx / 3) + 1}`;
 };
 const getMonthIndex = (monthName) => {
@@ -58,25 +66,24 @@ const getMonthIndex = (monthName) => {
 
 // ─── Tier Badge Component ─────────────────────────────────────────────────────
 const TIER_META = {
-  Masters: { icon: Crown, gradient: 'from-purple-600 to-purple-900', border: 'border-purple-500', text: 'text-purple-300', glow: 'shadow-purple-500/40' },
-  Diamond: { icon: Gem, gradient: 'from-blue-400 to-blue-800', border: 'border-blue-400', text: 'text-blue-200', glow: 'shadow-blue-400/40' },
-  Platinum: { icon: Star, gradient: 'from-zinc-300 to-zinc-600', border: 'border-zinc-300', text: 'text-zinc-100', glow: 'shadow-zinc-300/30' },
-  Gold: { icon: Trophy, gradient: 'from-yellow-400 to-yellow-700', border: 'border-yellow-500', text: 'text-yellow-300', glow: 'shadow-yellow-500/40' },
-  Silver: { icon: Award, gradient: 'from-zinc-400 to-zinc-700', border: 'border-zinc-400', text: 'text-zinc-300', glow: 'shadow-zinc-400/30' },
-  Bronze: { icon: Flame, gradient: 'from-orange-500 to-orange-900', border: 'border-orange-600', text: 'text-orange-400', glow: 'shadow-orange-600/30' },
+  Masters: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FMaster.png?alt=media&token=bc015405-b714-48a1-847c-60ae1e92c74c', border: 'border-purple-500', text: 'text-purple-300', glow: 'shadow-purple-500/40' },
+  Diamond: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FDiamond.png?alt=media&token=94922391-5178-4949-80a7-3d2e07c97aed', border: 'border-blue-400', text: 'text-blue-200', glow: 'shadow-blue-400/40' },
+  Platinum: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FPlatinum.png?alt=media&token=75777ff3-d35f-449b-9e64-570bca53ab98', border: 'border-zinc-300', text: 'text-zinc-100', glow: 'shadow-zinc-300/30' },
+  Gold: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FGold.png?alt=media&token=59724365-6acd-44ce-8fac-27a09611910e', border: 'border-yellow-500', text: 'text-yellow-300', glow: 'shadow-yellow-500/40' },
+  Silver: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FSilver.png?alt=media&token=f5336391-30a0-4b06-af0d-54ff2b842313', border: 'border-zinc-400', text: 'text-zinc-300', glow: 'shadow-zinc-400/30' },
+  Bronze: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FBronze.png?alt=media&token=8184a12b-3c86-49a1-a19f-19967832b297', border: 'border-orange-600', text: 'text-orange-400', glow: 'shadow-orange-600/30' },
 };
 const TierBadge = ({ tier, size = 'md' }) => {
   const meta = TIER_META[tier] || TIER_META.Bronze;
-  const Icon = meta.icon;
   const sizeClass = size === 'sm'
     ? 'px-2 py-0.5 text-[8px] gap-1'
     : size === 'lg'
       ? 'px-5 py-2 text-[13px] gap-2'
       : 'px-3 py-1 text-[10px] gap-1.5';
-  const iconSize = size === 'lg' ? 'w-4 h-4' : 'w-3 h-3';
+  const imgSize = size === 'lg' ? 'w-6 h-6' : size === 'sm' ? 'w-3 h-3' : 'w-4 h-4';
   return (
     <span className={`inline-flex items-center ${sizeClass} rounded-full border ${meta.border} ${meta.text} bg-black/40 font-black uppercase tracking-wider shadow-lg ${meta.glow}`}>
-      <Icon className={iconSize} />
+      <img src={meta.img} alt={tier} className={`${imgSize} object-contain`} />
       {tier}
     </span>
   );
@@ -85,48 +92,40 @@ const TierBadge = ({ tier, size = 'md' }) => {
 // --- Sub-components ---
 
 const Header = ({ onHome }) => (
-  <header className="sticky top-0 z-[100] px-6 py-4 md:px-12 md:py-6 bg-black/95 backdrop-blur-3xl border-b border-white/10 animate-in fade-in slide-in-from-top-4 duration-700">
-    <div className="max-w-[1400px] mx-auto">
-      {/* Logos Row */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col items-start gap-2">
-          <div
-            className="flex items-center cursor-pointer group"
-            onClick={onHome}
-          >
-            <div className="relative">
-              <div className="absolute -inset-4 bg-white/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" />
-              <img src="./sam_logo.png" alt="Logo" className="h-8 md:h-12 w-auto object-contain brightness-110 group-hover:scale-110 transition-transform duration-500 relative z-10" />
-            </div>
-          </div>
-          {/* TCS Project ID Badge */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-600/10 border border-blue-500/30 rounded-full">
-              <ShieldCheck className="w-2.5 h-2.5 text-blue-400" />
-              <span className="text-[8px] font-black uppercase tracking-[0.25em] text-blue-400">TCS — Technical Capability System</span>
-            </div>
-          </div>
-          {/* Tagline - Mobile Only */}
-          <div className="md:hidden">
-            <p className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-black">
-              "Earn Your Tier • Own Your Title"
-            </p>
-          </div>
-        </div>
+  <header className="sticky top-0 z-[100] px-6 py-4 md:px-12 md:py-5 bg-black/95 backdrop-blur-3xl border-b border-white/10 animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="max-w-[1400px] mx-auto grid grid-cols-3 items-center gap-4">
 
-        <div className="flex items-center group">
-          <img src="./fawzy-logo.png" alt="Logo" className="h-16 md:h-32 w-auto object-contain brightness-110 group-hover:scale-105 transition-transform duration-500 relative z-10" />
+      {/* Left — Samsung logo */}
+      <div
+        className="flex items-center cursor-pointer group"
+        onClick={onHome}
+      >
+        <div className="relative">
+          <div className="absolute -inset-4 bg-white/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" />
+          <img
+            src="./sam_logo.png"
+            alt="Samsung Logo"
+            className="h-10 md:h-14 w-auto object-contain brightness-110 group-hover:scale-110 transition-transform duration-500 relative z-10"
+          />
         </div>
       </div>
 
-      {/* Tagline - Desktop Center */}
-      <div className="hidden md:flex justify-center -mt-10 relative z-0 pointer-events-none">
-        <div className="pointer-events-auto px-5 py-1.5 rounded-full">
-          <p className="text-[15px] uppercase tracking-[0.5em] text-zinc-400 text-center font-black">
-            "Earn Your Tier • Own Your Title"
-          </p>
-        </div>
+      {/* Center — Slogan */}
+      <div className="flex flex-col items-center text-center gap-1">
+        <p className="text-[8px] md:text-[11px] uppercase tracking-[0.35em] md:tracking-[0.5em] text-zinc-400 font-black leading-relaxed">
+          Earn Your Tier<br className="md:hidden" /><span className="hidden md:inline"> • </span>Own Your Title
+        </p>
       </div>
+
+      {/* Right — TCS / Fawzy logo */}
+      <div className="flex items-center justify-end group">
+        <img
+          src="./fawzy-logo.png"
+          alt="TCS Logo"
+          className="h-10 md:h-14 w-auto object-contain brightness-110 group-hover:scale-105 transition-transform duration-500"
+        />
+      </div>
+
     </div>
   </header>
 );
@@ -192,7 +191,15 @@ const PageContent = () => {
   const [view, setView] = useState('HOME');
   const [engineers, setEngineers] = useState([]);
   const [admins, setAdmins] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('adminSession');
+      if (!raw) return null;
+      const { user, loginAt } = JSON.parse(raw);
+      return Date.now() - loginAt < 2 * 60 * 60 * 1000 ? user : null;
+    } catch { return null; }
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedEngineer, setSelectedEngineer] = useState(null);
@@ -207,7 +214,16 @@ const PageContent = () => {
   const [fetchedHiddenEngineers, setFetchedHiddenEngineers] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef(null);
-  const [isLogged, setIsLogged] = useState(false);
+  const [isLogged, setIsLogged] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = localStorage.getItem('adminSession');
+      if (!raw) return false;
+      const { loginAt } = JSON.parse(raw);
+      const TWO_HOURS = 2 * 60 * 60 * 1000;
+      return Date.now() - loginAt < TWO_HOURS;
+    } catch { return false; }
+  });
 
   // New feature states
   const [homeViewMode, setHomeViewMode] = useState('MONTHLY'); // 'MONTHLY' | 'QUARTERLY'
@@ -228,6 +244,86 @@ const PageContent = () => {
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
+
+  // Analytics
+  const [sessionStart, setSessionStart] = useState(null);
+  const [analyticsSummary, setAnalyticsSummary] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const visitedPagesRef = React.useRef([]);
+
+  const refreshAnalytics = React.useCallback(() => {
+    setAnalyticsLoading(true);
+    getAnalyticsSummary().then(data => {
+      setAnalyticsSummary(data);
+      setAnalyticsLoading(false);
+    });
+  }, []);
+
+  // Cookie consent
+
+  // Activity log
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const loadLogs = React.useCallback(() => {
+    setLogsLoading(true);
+    fetchLogs(100).then(data => { setActivityLogs(data); setLogsLoading(false); });
+  }, []);
+
+  // Scroll to top on every view change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (!visitedPagesRef.current.includes(view)) {
+      visitedPagesRef.current = [...visitedPagesRef.current, view];
+    }
+    if (view === 'ADMIN_DASHBOARD' && isLogged) {
+      const t = setTimeout(() => { refreshAnalytics(); loadLogs(); }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [view]);
+
+  // Record visit on mount & session end on tab close
+  const isLoggedRef = React.useRef(isLogged);
+  useEffect(() => { isLoggedRef.current = isLogged; }, [isLogged]);
+
+  useEffect(() => {
+    let start;
+    recordVisit().then(t => {
+      start = t;
+      setSessionStart(t);
+    });
+    const handleUnload = () => {
+      if (start) recordSessionEnd(start, visitedPagesRef.current, isLoggedRef.current);
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
+    // Global error capture — log JS errors and unhandled promise rejections
+    const onError = (event) => {
+      writeLog({
+        type: 'ERROR',
+        actor: isLoggedRef.current ? (localStorage.getItem('userName') || 'admin') : 'visitor',
+        action: 'Uncaught JS error',
+        details: { message: event.message?.slice(0, 200), filename: event.filename, lineno: event.lineno },
+        severity: 'error',
+      });
+    };
+    const onRejection = (event) => {
+      writeLog({
+        type: 'ERROR',
+        actor: isLoggedRef.current ? (localStorage.getItem('userName') || 'admin') : 'visitor',
+        action: 'Unhandled promise rejection',
+        details: { reason: String(event.reason)?.slice(0, 200) },
+        severity: 'error',
+      });
+    };
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  }, []);
 
   // Initial Load
   useEffect(() => {
@@ -311,15 +407,17 @@ const PageContent = () => {
         periods.push({ key, month: e.month, year: e.year });
       }
     });
+    // Sort ascending: oldest year first; within same year Jan→Feb→…→Dec
     return periods.sort((a, b) => {
       const ya = parseInt(a.year), yb = parseInt(b.year);
-      if (yb !== ya) return yb - ya;
-      return getMonthIndex(b.month) - getMonthIndex(a.month);
+      if (ya !== yb) return ya - yb;
+      return getMonthIndex(a.month) - getMonthIndex(b.month);
     });
   }, [engineers]);
 
   // ─── Hall of Fame: top 10 for selected month (deduplicated by code) ─────────
-  const effectiveHofMonth = selectedHofMonth || allMonthPeriods[0]?.key || null;
+  // Default to the LAST element = latest month (ascending sort → last = newest)
+  const effectiveHofMonth = selectedHofMonth || allMonthPeriods[allMonthPeriods.length - 1]?.key || null;
   const hofTop10 = useMemo(() => {
     if (!effectiveHofMonth) return [];
     const [m, y] = effectiveHofMonth.split('-');
@@ -341,7 +439,11 @@ const PageContent = () => {
   const allQuarterKeys = useMemo(() => {
     const seen = new Set();
     engineers.forEach(e => {
-      if (e.month && e.year) seen.add(`${getQuarter(e.month)}-${e.year}`);
+      if (e.month && e.year) {
+        const q = getQuarter(e.month);
+        // Only add valid quarters (skip Q? which means unrecognised month name)
+        if (q !== 'Q?') seen.add(`${q}-${e.year}`);
+      }
     });
     return [...seen].sort((a, b) => {
       const [qa, ya] = a.split('-');
@@ -476,18 +578,23 @@ const PageContent = () => {
       setCurrentUser(foundAdmin);
       setLoginUser('');
       setLoginPass('');
-      // save userName in local storage
+      localStorage.setItem('adminSession', JSON.stringify({ user: foundAdmin, loginAt: Date.now() }));
       localStorage.setItem('userName', foundAdmin.name);
       setIsLogged(true);
       setView('ADMIN_DASHBOARD');
+      recordAdminLogin();
+      writeLog({ type: 'ADMIN_LOGIN', actor: foundAdmin.username, action: 'Admin logged in', details: { name: foundAdmin.name }, severity: 'info' });
+      getAnalyticsSummary().then(data => setAnalyticsSummary(data));
     } else {
       message.error("User or Password are wrong");
+      writeLog({ type: 'FAILED_LOGIN', actor: loginUser || 'unknown', action: 'Failed admin login attempt', severity: 'warning' });
     }
   };
 
   const handleLogout = () => {
+    writeLog({ type: 'ADMIN_LOGOUT', actor: currentUser?.username || 'admin', action: 'Admin logged out', severity: 'info' });
     setCurrentUser(null);
-    // clear userName from local storage
+    localStorage.removeItem('adminSession');
     localStorage.removeItem('userName');
     setIsLogged(false);
     setView('HOME');
@@ -594,9 +701,11 @@ const PageContent = () => {
 
       setEditingEng(null);
       message.success("Engineer record committed successfully");
+      writeLog({ type: 'ADMIN_ACTION', actor: currentUser?.username || 'admin', action: 'Saved engineer record', details: { name: finalEng.name, code: finalEng.code, month: finalEng.month, year: finalEng.year }, severity: 'info' });
     } catch (error) {
       console.error("Error saving engineer:", error);
       message.error("Error saving engineer. Check console.");
+      writeLog({ type: 'ERROR', actor: currentUser?.username || 'admin', action: 'Error saving engineer', details: { error: String(error)?.slice(0, 200) }, severity: 'error' });
     } finally {
       setIsSaving(false);
       hide();
@@ -624,9 +733,11 @@ const PageContent = () => {
       setNewAdminData({ username: '', password: '', name: '' });
       setShowAddAdmin(false);
       message.success("New admin added successfully");
+      writeLog({ type: 'ADMIN_ACTION', actor: currentUser?.username || 'admin', action: 'Added new admin', details: { username: newAdmin.username, name: newAdmin.name }, severity: 'info' });
     } catch (error) {
       console.error("Error adding admin:", error);
       message.error("Failed to add admin");
+      writeLog({ type: 'ERROR', actor: currentUser?.username || 'admin', action: 'Error adding admin', details: { error: String(error)?.slice(0, 200) }, severity: 'error' });
     }
   };
 
@@ -646,9 +757,11 @@ const PageContent = () => {
           await deleteAdminFromDb(id);
           setAdmins(prev => prev.filter(a => a.id !== id));
           message.success("Admin removed");
+          writeLog({ type: 'ADMIN_ACTION', actor: currentUser?.username || 'admin', action: 'Deleted admin account', details: { id }, severity: 'warning' });
         } catch (error) {
           console.error("Error deleting admin:", error);
           message.error("Failed to delete admin");
+          writeLog({ type: 'ERROR', actor: currentUser?.username || 'admin', action: 'Error deleting admin', details: { id, error: String(error)?.slice(0, 200) }, severity: 'error' });
         }
       },
     });
@@ -669,9 +782,11 @@ const PageContent = () => {
             setFetchedHiddenEngineers(prev => [...prev, { ...archivedEng, hidden: true }]);
           }
           message.success("Engineer archived");
+          writeLog({ type: 'ADMIN_ACTION', actor: currentUser?.username || 'admin', action: 'Archived engineer', details: { id, name: archivedEng?.name, code: archivedEng?.code }, severity: 'warning' });
         } catch (error) {
           console.error("Error deleting engineer:", error);
           message.error("Failed to archive engineer record.");
+          writeLog({ type: 'ERROR', actor: currentUser?.username || 'admin', action: 'Error archiving engineer', details: { id, error: String(error)?.slice(0, 200) }, severity: 'error' });
         }
       }
     });
@@ -690,9 +805,11 @@ const PageContent = () => {
             setEngineers(prev => [...prev, { ...restoredEng, hidden: false }]);
           }
           message.success("Engineer restored");
+          writeLog({ type: 'ADMIN_ACTION', actor: currentUser?.username || 'admin', action: 'Restored engineer', details: { id, name: restoredEng?.name }, severity: 'info' });
         } catch (error) {
           console.error("Error restoring engineer:", error);
           message.error("Failed to restore engineer.");
+          writeLog({ type: 'ERROR', actor: currentUser?.username || 'admin', action: 'Error restoring engineer', details: { id, error: String(error)?.slice(0, 200) }, severity: 'error' });
         }
       }
     });
@@ -871,7 +988,8 @@ const PageContent = () => {
                     <button
                       onClick={() => {
                         const idx = allMonthPeriods.findIndex(p => p.key === effectiveHofMonth);
-                        if (idx < allMonthPeriods.length - 1) setSelectedHofMonth(allMonthPeriods[idx + 1].key);
+                        // Left arrow → go to earlier month (lower index in ascending array)
+                        if (idx > 0) setSelectedHofMonth(allMonthPeriods[idx - 1].key);
                       }}
                       className="p-3 bg-zinc-900 border border-white/10 rounded-2xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all"
                     >
@@ -886,7 +1004,8 @@ const PageContent = () => {
                     <button
                       onClick={() => {
                         const idx = allMonthPeriods.findIndex(p => p.key === effectiveHofMonth);
-                        if (idx > 0) setSelectedHofMonth(allMonthPeriods[idx - 1].key);
+                        // Right arrow → go to later month (higher index in ascending array)
+                        if (idx < allMonthPeriods.length - 1) setSelectedHofMonth(allMonthPeriods[idx + 1].key);
                       }}
                       className="p-3 bg-zinc-900 border border-white/10 rounded-2xl text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all"
                     >
@@ -907,14 +1026,13 @@ const PageContent = () => {
                       const cardBorder = isFirst ? 'border-yellow-500/40 shadow-yellow-500/10 shadow-2xl' : isSecond ? 'border-zinc-300/20' : isThird ? 'border-orange-700/20' : 'border-white/5';
                       return (
                         <div key={eng.id} className={`glass-card rounded-[2.5rem] p-6 md:p-8 flex items-center gap-6 border transition-all hover:border-white/20 ${cardBorder}`}>
-                          <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${rankBg}`}>
-                            {isFirst ? <Trophy className="w-6 h-6" /> : idx + 1}
+                          <div className="relative flex-shrink-0 w-14 h-14">
+                            <img src={TIER_META[eng.tier]?.img || TIER_META.Bronze.img} alt={eng.tier} className="w-14 h-14 object-contain" />
                           </div>
                           <img src={eng.photoUrl} className={`w-14 h-14 rounded-2xl object-cover flex-shrink-0 ${isFirst ? 'border-2 border-yellow-500' : 'border border-white/10'}`} alt={eng.name} />
                           <div className="flex-1 min-w-0">
                             <h4 className={`text-base md:text-lg font-black uppercase tracking-tight truncate ${isFirst ? 'text-yellow-400' : 'text-white'}`}>{eng.name}</h4>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
-                              <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{eng.code}</span>
                               <TierBadge tier={eng.tier} size="sm" />
                             </div>
                           </div>
@@ -972,14 +1090,13 @@ const PageContent = () => {
                       const cardBorder = isFirst ? 'border-yellow-500/40 shadow-yellow-500/10 shadow-2xl' : isSecond ? 'border-zinc-300/20' : isThird ? 'border-orange-700/20' : 'border-white/5';
                       return (
                         <div key={eng.id + effectiveQuarterKey} className={`glass-card rounded-[2.5rem] p-6 md:p-8 flex items-center gap-6 border transition-all hover:border-white/20 ${cardBorder}`}>
-                          <div className={`flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl ${rankBg}`}>
-                            {isFirst ? <Crown className="w-6 h-6" /> : idx + 1}
+                          <div className="relative flex-shrink-0 w-14 h-14">
+                            <img src={TIER_META[eng.tier]?.img || TIER_META.Bronze.img} alt={eng.tier} className="w-14 h-14 object-contain" />
                           </div>
                           <img src={eng.photoUrl} className={`w-14 h-14 rounded-2xl object-cover flex-shrink-0 ${isFirst ? 'border-2 border-yellow-500' : 'border border-white/10'}`} alt={eng.name} />
                           <div className="flex-1 min-w-0">
                             <h4 className={`text-base md:text-lg font-black uppercase tracking-tight truncate ${isFirst ? 'text-yellow-400' : 'text-white'}`}>{eng.name}</h4>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
-                              <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{eng.code}</span>
                               <TierBadge tier={eng.tier} size="sm" />
                               <span className="text-[8px] font-black text-zinc-700 uppercase">{eng.monthCount} month{eng.monthCount > 1 ? 's' : ''} tracked</span>
                             </div>
@@ -1211,6 +1328,149 @@ const PageContent = () => {
                 </button>
               </div>
 
+              {/* Analytics Panel */}
+              {analyticsSummary && (() => {
+                const today = new Date().toISOString().slice(0, 10);
+                const todayVisitors = analyticsSummary.dailyVisitorHits?.[today] || 0;
+                const todayAdmins = analyticsSummary.dailyAdminLogins?.[today] || 0;
+                const avgVMs = analyticsSummary.avgVisitorSessionMs || 0;
+                const avgVMin = Math.floor(avgVMs / 60000);
+                const avgVSec = Math.floor((avgVMs % 60000) / 1000);
+                const avgAMs = analyticsSummary.avgAdminSessionMs || 0;
+                const avgAMin = Math.floor(avgAMs / 60000);
+                const avgASec = Math.floor((avgAMs % 60000) / 1000);
+                return (
+                  <div className="glass-card rounded-[2.5rem] p-8 space-y-6 border border-blue-500/10">
+                    <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                      <BarChart3 className="w-4 h-4 text-blue-400" />
+                      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">App Analytics</h3>
+                      <span className="ml-auto text-[8px] font-black text-zinc-700 uppercase tracking-widest">Live · Firestore</span>
+                      <button
+                        onClick={refreshAnalytics}
+                        disabled={analyticsLoading}
+                        className="flex items-center gap-1 px-3 py-1 bg-blue-600/10 border border-blue-500/20 rounded-full text-[8px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-600/20 transition-all disabled:opacity-40"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${analyticsLoading ? 'animate-spin' : ''}`} />
+                        {analyticsLoading ? 'Loading…' : 'Refresh'}
+                      </button>
+                    </div>
+
+                    {/* Visitor Stats */}
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">👤 Visitor Traffic</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">All-Time Visits</p>
+                          <p className="text-2xl font-black text-emerald-400 italic">{analyticsSummary.visitorHits ?? '—'}</p>
+                        </div>
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Today</p>
+                          <p className="text-2xl font-black text-emerald-400 italic">{todayVisitors}</p>
+                          <p className="text-[7px] text-zinc-700 mt-1">{today}</p>
+                        </div>
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Sessions</p>
+                          <p className="text-2xl font-black text-emerald-400 italic">{analyticsSummary.visitorSessions ?? '—'}</p>
+                        </div>
+                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Time</p>
+                          <p className="text-2xl font-black text-emerald-400 italic">{avgVMin}m {avgVSec}s</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-white/5" />
+
+                    {/* Admin Stats */}
+                    <div className="space-y-3">
+                      <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">🛡️ Admin Activity</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">All-Time Logins</p>
+                          <p className="text-2xl font-black text-blue-400 italic">{analyticsSummary.adminLogins ?? '—'}</p>
+                        </div>
+                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Today</p>
+                          <p className="text-2xl font-black text-blue-400 italic">{todayAdmins}</p>
+                          <p className="text-[7px] text-zinc-700 mt-1">{today}</p>
+                        </div>
+                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Sessions</p>
+                          <p className="text-2xl font-black text-blue-400 italic">{analyticsSummary.adminSessions ?? '—'}</p>
+                        </div>
+                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Time</p>
+                          <p className="text-2xl font-black text-blue-400 italic">{avgAMin}m {avgASec}s</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Activity Log Panel */}
+              {(() => {
+                const SEVERITY_STYLES = {
+                  info: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+                  warning: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
+                  error: 'bg-red-500/10 text-red-400 border-red-500/30',
+                };
+                const TYPE_COLORS = {
+                  ADMIN_LOGIN: 'text-emerald-400',
+                  ADMIN_LOGOUT: 'text-zinc-400',
+                  ADMIN_ACTION: 'text-blue-400',
+                  FAILED_LOGIN: 'text-yellow-400',
+                  ERROR: 'text-red-400',
+                  VISITOR_EVENT: 'text-purple-400',
+                };
+                return (
+                  <div className="glass-card rounded-[2.5rem] p-8 space-y-5 border border-white/5">
+                    <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                      <Activity className="w-4 h-4 text-zinc-400" />
+                      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Activity Log</h3>
+                      <span className="ml-auto text-[8px] font-black text-zinc-700 uppercase tracking-widest">Last 100 events</span>
+                      <button
+                        onClick={loadLogs}
+                        disabled={logsLoading}
+                        className="flex items-center gap-1 px-3 py-1 bg-zinc-800 border border-white/10 rounded-full text-[8px] font-black text-zinc-400 uppercase tracking-widest hover:bg-zinc-700 transition-all disabled:opacity-40"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${logsLoading ? 'animate-spin' : ''}`} />
+                        {logsLoading ? 'Loading…' : 'Refresh'}
+                      </button>
+                    </div>
+
+                    {activityLogs.length === 0 ? (
+                      <p className="text-center text-zinc-700 text-[10px] uppercase tracking-widest py-8">{logsLoading ? 'Loading logs…' : 'No activity recorded yet.'}</p>
+                    ) : (
+                      <div className="space-y-2 max-h-[480px] overflow-y-auto pr-2">
+                        {activityLogs.map(log => (
+                          <div key={log.id} className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${SEVERITY_STYLES[log.severity] || SEVERITY_STYLES.info}`}>
+                            <div className="flex-shrink-0 mt-0.5">
+                              <span className={`text-[8px] font-black uppercase tracking-widest ${TYPE_COLORS[log.type] || 'text-zinc-400'}`}>{log.type?.replace('_', ' ')}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-black text-white truncate">{log.action}</p>
+                              {log.details && Object.keys(log.details).length > 0 && (
+                                <p className="text-[9px] text-zinc-500 mt-0.5 truncate">
+                                  {Object.entries(log.details).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                                </p>
+                              )}
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-[8px] font-black text-zinc-500 uppercase">{log.actor}</p>
+                              <p className="text-[7px] text-zinc-700 mt-0.5">
+                                {log.timestamp ? log.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }) : '—'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Live Registry Section */}
               <div className="space-y-8">
                 <div className="flex items-center justify-between">
@@ -1256,38 +1516,40 @@ const PageContent = () => {
                     <div className="p-24 text-center text-zinc-700 italic font-black uppercase tracking-[0.3em]">No registry entries detected.</div>
                   ) : deduplicatedEngineers.map(eng => (
 
-                    <div key={eng.id} className="bg-black hover:bg-zinc-900/50 transition-all p-4 md:p-8 flex items-center justify-between group">
-                      <div className="flex items-center gap-4 md:gap-8">
-                        <div className="w-12 h-12 md:w-16 md:h-16 relative flex-shrink-0">
-                          <img src={eng.photoUrl} className="w-full h-full rounded-2xl object-cover grayscale-50 group-hover:grayscale-0 transition-all shadow-2xl shadow-black/80" alt={eng.name} />
-                          <div className={`absolute -top-2 -left-2 w-5 h-5 rounded-full border-4 border-black ${getTierColor(eng.tier)}`} />
+                    <div key={eng.id} className="bg-black hover:bg-zinc-900/50 transition-all p-3 md:p-6 flex items-center justify-between gap-2 group">
+                      <div className="flex items-center gap-3 md:gap-6 min-w-0 flex-1">
+                        <div className="w-10 h-10 md:w-14 md:h-14 relative flex-shrink-0">
+                          <img src={eng.photoUrl} className="w-full h-full rounded-xl md:rounded-2xl object-cover grayscale-50 group-hover:grayscale-0 transition-all shadow-2xl shadow-black/80" alt={eng.name} />
+                          <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full border-2 border-black bg-black flex items-center justify-center">
+                            <img src={TIER_META[eng.tier]?.img || TIER_META.Bronze.img} alt={eng.tier} className="w-4 h-4 object-contain" />
+                          </div>
                         </div>
                         <div className="flex flex-col min-w-0">
-                          <h4 className="text-sm md:text-lg font-black text-white uppercase tracking-tighter group-hover:text-blue-500 transition-colors uppercase truncate">{eng.name}</h4>
-                          <div className="flex items-center gap-4 mt-1">
-                            <span className="text-[8px] md:text-[10px] font-black text-zinc-600 uppercase tracking-widest">{eng.code}</span>
-                            <span className={`text-[7px] md:text-[8px] font-black uppercase tracking-[0.2em] px-2 md:px-3 py-1 bg-zinc-900 border border-white/5 rounded-full ${getTierColor(eng.tier)}`}>{eng.tier} Specialist</span>
+                          <h4 className="text-xs md:text-base font-black text-white uppercase tracking-tighter group-hover:text-blue-500 transition-colors truncate">{eng.name}</h4>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span className="text-[7px] md:text-[9px] font-black text-zinc-600 uppercase tracking-widest">{eng.code}</span>
+                            <TierBadge tier={eng.tier} size="sm" />
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 md:gap-12 flex-shrink-0">
-                        <div className="text-right flex flex-col items-end">
-                          <span className="text-lg md:text-2xl font-black text-white tracking-widest italic">{eng.tcsScore}</span>
-                          <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mt-1">Registry Index</span>
+                      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+                        <div className="text-right">
+                          <span className="text-sm md:text-xl font-black text-white tracking-widest italic">{eng.tcsScore}</span>
+                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest">TCS</p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 md:gap-2">
                           <button
                             onClick={() => setEditingEng(eng)}
-                            className="p-3 md:p-4 bg-zinc-900 text-zinc-500 rounded-xl md:rounded-2xl hover:bg-white hover:text-black transition-all shadow-xl"
+                            className="p-2 md:p-3 bg-zinc-900 text-zinc-500 rounded-lg md:rounded-2xl hover:bg-white hover:text-black transition-all"
                           >
-                            <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
+                            <Edit2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
                           </button>
                           <button
                             onClick={() => deleteEngineerHandler(eng.id)}
-                            className="p-3 md:p-4 bg-zinc-900 text-zinc-500 rounded-xl md:rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"
+                            className="p-2 md:p-3 bg-zinc-900 text-zinc-500 rounded-lg md:rounded-2xl hover:bg-red-600 hover:text-white transition-all"
                           >
-                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                            <Trash2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -1412,8 +1674,8 @@ const PageContent = () => {
                   <div className="relative group">
                     <div className="absolute -inset-4 bg-blue-600/20 blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
                     <img src={selectedEngineer.photoUrl} className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] md:rounded-[3.5rem] object-cover border-4 border-zinc-800 shadow-3xl grayscale-50 group-hover:grayscale-0 transition-all duration-500" alt={selectedEngineer.name} />
-                    <div className={`absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black shadow-2xl border-4 border-black z-20 ${getTierColor(selectedEngineer.tier)}`}>
-                      {selectedEngineer.tier[0]}
+                    <div className="absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shadow-2xl border-4 border-black z-20 bg-black">
+                      <img src={TIER_META[selectedEngineer.tier]?.img || TIER_META.Bronze.img} alt={selectedEngineer.tier} className="w-7 h-7 md:w-9 md:h-9 object-contain" />
                     </div>
                   </div>
                   <div className="text-center md:text-left space-y-2">
@@ -1463,10 +1725,15 @@ const PageContent = () => {
                   return getMonthIndex(a.month) - getMonthIndex(b.month); // Jan → Dec
                 });
                 const monthPeriods = engRecords.map(r => ({ key: `${r.month}-${r.year}`, label: `${r.month} ${r.year}` }));
-                const quarterPeriods = [...new Map(engRecords.map(r => {
-                  const qk = `${getQuarter(r.month)}-${r.year}`;
-                  return [qk, { key: qk, label: `${getQuarter(r.month)} · ${r.year}` }];
-                })).values()];
+                const quarterPeriods = [...new Map(
+                  engRecords
+                    .filter(r => getQuarter(r.month) !== null)
+                    .map(r => {
+                      const q = getQuarter(r.month);
+                      const qk = `${q}-${r.year}`;
+                      return [qk, { key: qk, label: `${q} · ${r.year}` }];
+                    })
+                ).values()];
 
 
                 // Effective display record
@@ -1578,17 +1845,14 @@ const PageContent = () => {
                         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex flex-col items-center text-center">
                           <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">KPIs</span>
                           <span className="text-3xl font-black text-emerald-300 italic">{kpiPts > 0 ? kpiPts.toFixed(1) : '—'}</span>
-                          <span className="text-[7px] font-black text-zinc-600 uppercase mt-1">50% · Max 50</span>
                         </div>
                         <div className="bg-purple-500/5 border border-purple-500/20 rounded-2xl p-4 flex flex-col items-center text-center">
                           <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-1">DRNPS</span>
                           <span className="text-3xl font-black text-purple-300 italic">{drnpsPts.toFixed(1)}</span>
-                          <span className="text-[7px] font-black text-zinc-600 uppercase mt-1">30% · Max 30</span>
                         </div>
                         <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 flex flex-col items-center text-center">
                           <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1">Exam</span>
                           <span className="text-3xl font-black text-blue-300 italic">{examPts.toFixed(1)}</span>
-                          <span className="text-[7px] font-black text-zinc-600 uppercase mt-1">20% · Max 20</span>
                         </div>
                       </div>
                     </div>
@@ -1980,13 +2244,12 @@ const PageContent = () => {
                     { tier: 'Silver', range: '50 – 59', desc: 'Meeting baseline standards but with clear opportunities for improvement.', meta: TIER_META.Silver },
                     { tier: 'Bronze', range: '0 – 49', desc: 'Entry level or below-target performance. Focus on KPI improvement and exam preparation.', meta: TIER_META.Bronze },
                   ].map(({ tier, range, desc, meta }) => {
-                    const Icon = meta.icon;
                     return (
-                      <div key={tier} className={`bg-gradient-to-br ${meta.gradient} p-[1px] rounded-[2rem] shadow-xl ${meta.glow}`}>
-                        <div className="bg-zinc-950 rounded-[2rem] p-8 space-y-4 h-full">
+                      <div key={tier} className={`border ${meta.border} rounded-[2rem] shadow-xl ${meta.glow} bg-zinc-950`}>
+                        <div className="rounded-[2rem] p-8 space-y-4 h-full">
                           <div className="flex items-center justify-between">
-                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center shadow-lg`}>
-                              <Icon className="w-7 h-7 text-white" />
+                            <div className="w-14 h-14 rounded-2xl bg-black/40 flex items-center justify-center shadow-lg border border-white/10">
+                              <img src={meta.img} alt={tier} className="w-10 h-10 object-contain" />
                             </div>
                             <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-black/40 border ${meta.border} ${meta.text}`}>{range} pts</span>
                           </div>
@@ -2026,6 +2289,7 @@ const PageContent = () => {
               </div>
             </div>
           )}
+
 
           {/* ─── FEEDBACK VIEW ────────────────────────────────────────────── */}
           {view === 'FEEDBACK' && (
@@ -2209,7 +2473,9 @@ const PageContent = () => {
                       <div className="space-y-3 md:col-span-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-4">Active Audit Period</label>
                         <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 items-center">
-                          <input className="w-full md:flex-1 bg-black/40 border border-white/10 rounded-2xl p-5 text-base font-bold text-white focus:border-blue-500 transition-all outline-none" value={editingEng.month} onChange={e => setEditingEng({ ...editingEng, month: e.target.value })} placeholder="Month" />
+                          <select className="w-full md:flex-1 bg-black/40 border border-white/10 rounded-2xl p-5 text-base font-bold text-white focus:border-blue-500 transition-all outline-none" value={editingEng.month} onChange={e => setEditingEng({ ...editingEng, month: e.target.value })}>
+                            {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
                           <input className="w-full md:w-40 bg-black/40 border border-white/10 rounded-2xl p-5 text-base font-bold text-white focus:border-blue-500 transition-all outline-none" value={editingEng.year} onChange={e => setEditingEng({ ...editingEng, year: e.target.value })} placeholder="Year" />
                         </div>
                       </div>
@@ -2326,6 +2592,7 @@ const PageContent = () => {
           <span className="text-[8px] font-black uppercase tracking-tight">Secure</span>
         </button>
       </nav>
+
     </div>
   );
 };

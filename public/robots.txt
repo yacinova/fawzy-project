@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Disallow admin routes from indexing
+Disallow: /api/
+
+Sitemap: https://tcs-for-engineers.web.app/sitemap.xml
