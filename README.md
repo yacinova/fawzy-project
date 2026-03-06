@@ -7,9 +7,28 @@ A premium, data-driven **Engineer Performance and Ranking Platform** built with 
 ---
 
 ## 🌟 What is this project?
+<<<<<<< HEAD
 The **TCS Ecosystem** replaces subjective engineer evaluations with a transparent, visually stunning, and competitive performance hub. By tracking core metrics—operational KPIs, Customer Satisfaction (DRNPS), and technical Exam Scores—it ranks engineers on a public leaderboard and gives them a personal dashboard to trace their historical growth.
 
 ## 🛠️ Core Features
+=======
+The **TCS Ecosystem** is a centralized hub for tracking and visualizing engineer performance metrics. It moves beyond standard databases to provide a dynamic, real-time leaderboard ("The Podium") and a secure administrative command center. It implements a sophisticated scoring algorithm to calculate a **Technical Capability Score (TCS)** based on comprehensive KPIs, assigning engineers to dynamic tiers ranging from **Bronze** to **Masters**.
+
+## 🛠️ What it does
+- **Public Capability Audit**: Allows engineers to verify their standing and view their detailed performance profile using unique identification codes.
+- **Dynamic Leaderboard**: Visualizes the top three performers on a premium "Podium" and lists all engineers in a high-impact registry.
+- **Secure Management Node**: An optimized, space-efficient admin dashboard for:
+    - **Manual Provisioning**: Adding and editing engineer records with real-time validation.
+    - **Bulk Operations**: Bulk uploading engineer data via CSV templates with newly consolidated UI controls.
+    - **Asset & Document Management**: Integrated image uploading to Firebase Storage and exporting engineer metrics to Word (.docx) and PowerPoint (.pptx).
+    - **Data Archiving**: Hiding and restoring engineer records without losing historical data.
+- **Advanced Analytics**: Accurately tracks application usage by separating visitor analytics from administrator session data.
+- **Automated Tiering**: Real-time calculation of TCS scores (out of 100) and dynamic tier assignment based on a weighted algorithm:
+    - **Operational KPIs (50%)**: REDO, IQC Skip Ratio, Maintenance Mode, OQC Pass Rate, Training Attendance, Core Parts PBA, Core Parts Octa, and Multi Parts Ratio.
+    - **DRNPS (30%)**: Derived from Promoter and Detractor feedback counts.
+    - **Exam Score (20%)**.
+    - **Tiers**: Bronze, Silver, Gold, Platinum, Diamond, and Masters.
+>>>>>>> 7bf909ccfae0a7c992b5f57e9a540f570c8c6e1f
 
 ### 🏆 The Hall of Fame (Leaderboard)
 - **Top 10 Podium**: Displays the absolute best engineers for any given Month or Quarter.
@@ -48,9 +67,16 @@ TCS Scores (0-100) automatically map to physical/digital tiers:
 - **Component Library**: [Ant Design](https://ant.design/) & [Lucide React Icons](https://lucide.dev/)
 - **Backend / Database**: [Firebase Firestore](https://firebase.google.com/docs/firestore) (NoSQL)
 - **File Storage**: [Firebase Storage](https://firebase.google.com/docs/storage)
+<<<<<<< HEAD
 - **SEO Ready**: Configured metadata, Open Graph tags, robots.txt, and sitemap.xml.
 
 ---
+=======
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **UI Components**: [Ant Design 6](https://ant.design/) (Modals, Notifications, Flexible Themes)
+- **Document Generation**: `docx` and `pptxgenjs` for automated reports.
+- **Icons**: [Lucide React](https://lucide.dev/)
+>>>>>>> 7bf909ccfae0a7c992b5f57e9a540f570c8c6e1f
 
 ## 📂 Project Structure
 ```text
