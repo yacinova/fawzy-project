@@ -67,11 +67,11 @@ const getMonthIndex = (monthName) => {
 // ─── Tier Badge Component ─────────────────────────────────────────────────────
 const TIER_META = {
   Masters: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FMaster%201.png?alt=media&token=a8eb8d46-5351-4b02-9f4e-e16def338ce6', border: 'border-purple-500', text: 'text-purple-300', glow: 'shadow-purple-500/40' },
-  Diamond: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FDiamond%201.png?alt=media&token=44d5e392-494d-4e70-b9f5-04ed64e44064', border: 'border-blue-400', text: 'text-blue-200', glow: 'shadow-blue-400/40' },
-  Platinum: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FPlatinum.png?alt=media&token=75777ff3-d35f-449b-9e64-570bca53ab98', border: 'border-zinc-300', text: 'text-zinc-100', glow: 'shadow-zinc-300/30' },
-  Gold: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FGold.png?alt=media&token=59724365-6acd-44ce-8fac-27a09611910e', border: 'border-yellow-500', text: 'text-yellow-300', glow: 'shadow-yellow-500/40' },
-  Silver: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FSilver.png?alt=media&token=f5336391-30a0-4b06-af0d-54ff2b842313', border: 'border-zinc-400', text: 'text-zinc-300', glow: 'shadow-zinc-400/30' },
-  Bronze: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FBronze.png?alt=media&token=8184a12b-3c86-49a1-a19f-19967832b297', border: 'border-orange-600', text: 'text-orange-400', glow: 'shadow-orange-600/30' },
+  Diamond: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FDiamond%202.png?alt=media&token=2310388b-3281-4357-b202-677788b29c25', border: 'border-blue-400', text: 'text-blue-200', glow: 'shadow-blue-400/40' },
+  Platinum: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FPlat%202.png?alt=media&token=8bbcfe60-0c97-4cc9-8d59-dec38f04eaba', border: 'border-zinc-300', text: 'text-zinc-100', glow: 'shadow-zinc-300/30' },
+  Gold: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FGold%202.png?alt=media&token=f153076b-6c3a-4a1a-8b46-b65c94c593bf', border: 'border-yellow-500', text: 'text-yellow-300', glow: 'shadow-yellow-500/40' },
+  Silver: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FSilver%202.png?alt=media&token=05ebda06-4011-4920-ac19-dd0b9fa9e3fb', border: 'border-zinc-400', text: 'text-zinc-300', glow: 'shadow-zinc-400/30' },
+  Bronze: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FBronze%202.png?alt=media&token=ec56f9b5-f567-4778-b0b2-4df15fe0a840', border: 'border-orange-600', text: 'text-orange-400', glow: 'shadow-orange-600/30' },
 };
 const TierBadge = ({ tier, size = 'md' }) => {
   const meta = TIER_META[tier] || TIER_META.Bronze;
