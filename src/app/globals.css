@@ -78,7 +78,7 @@
   /* Make tier emblem logos seamlessly blend with black background */
   .tier-emblem-blend {
     mix-blend-mode: screen;
-    filter: contrast(1.25) brightness(1.1);
+    filter: contrast(1.8) brightness(0.85) drop-shadow(0 0 4px rgba(0,0,0,0.8));
   }
 
   /* Stage 1: emblem spins in from behind (Y-axis) with scale */
