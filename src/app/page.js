@@ -326,6 +326,7 @@ const PageContent = () => {
     } catch { return null; }
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null); // New error state
 
   const [selectedEngineer, setSelectedEngineer] = useState(null);
   const [searchCode, setSearchCode] = useState('');
@@ -469,39 +470,51 @@ const PageContent = () => {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      setFetchError(null);
+      const initialAdmin = {
+        id: '1',
+        username: 'fawzy.m',
+        passwordB64: 'QWhsYXd5QDE5MDc=', // Ahlawy@1907
+        name: 'Fawzy M.',
+        role: 'SUPER_ADMIN',
+        createdAt: new Date().toISOString()
+      };
+
       try {
         const fetchedEngineers = await getEngineers();
         const fetchedHiddenEngineers = await getHiddenEngineers();
         const fetchedAdmins = await getAdmins();
 
-        if (fetchedEngineers.length > 0) {
+        // Data Handling
+        if (fetchedEngineers && fetchedEngineers.length > 0) {
           setEngineers(fetchedEngineers);
+          setNoEngineers(false);
         } else {
-          setNoEngineers(true);
+          console.warn("No engineers found in database. Using initial demo data.");
+          setEngineers(INITIAL_ENGINEERS);
+          setNoEngineers(false); // We have demo data now
         }
-        if (fetchedHiddenEngineers.length > 0) {
+
+        if (fetchedHiddenEngineers && fetchedHiddenEngineers.length > 0) {
           setFetchedHiddenEngineers(fetchedHiddenEngineers);
         } else {
           setFetchedHiddenEngineers([]);
         }
 
-        if (fetchedAdmins.length > 0) {
+        // Admin Handling
+        if (fetchedAdmins && fetchedAdmins.length > 0) {
           setAdmins(fetchedAdmins);
         } else {
-          const initialAdmin = {
-            id: '1',
-            username: 'fawzy.m',
-            passwordB64: 'QWhsYXd5QDE5MDc=', // Ahlawy@1907
-            name: 'Fawzy M.',
-            role: 'SUPER_ADMIN',
-            createdAt: new Date().toISOString()
-          };
           setAdmins([initialAdmin]);
-          // Auto-seed admin if empty? Maybe mostly managed via console for safety first time
-          // or just let it exist in state until saved.
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        setFetchError(`Database connection issue: ${error.message || 'Unknown error'}. Using offline fallback data and admin.`);
+        
+        // Use fallbacks on error
+        setEngineers(INITIAL_ENGINEERS);
+        setAdmins([initialAdmin]);
+        setNoEngineers(false);
       } finally {
         setIsLoading(false);
       }
@@ -742,6 +755,39 @@ const PageContent = () => {
       message.error("User or Password are wrong");
       writeLog({ type: 'FAILED_LOGIN', actor: loginUser || 'unknown', action: 'Failed admin login attempt', severity: 'warning', ip: ipInfo.ip, location: ipInfo.location });
     }
+  };
+
+  const seedDatabase = async () => {
+    setIsSaving(true);
+    const hide = message.loading("Seeding database with initial data...", 0);
+    try {
+      const promises = INITIAL_ENGINEERS.map(async (eng) => {
+        // Ensure ID is generated for Firestore
+        const engToSave = { ...eng, id: Date.now().toString() + Math.random().toString(36).substring(7) };
+        return saveEngineerToDb(engToSave);
+      });
+      await Promise.all(promises);
+      
+      const updatedEngineers = await getEngineers();
+      setEngineers(updatedEngineers);
+      message.success("Database seeded successfully!");
+      writeLog({ type: 'ADMIN_ACTION', actor: currentUser?.username || 'admin', action: 'Seeded database', severity: 'info' });
+    } catch (error) {
+      console.error("Error seeding database:", error);
+      message.error("Failed to seed database.");
+    } finally {
+      setIsSaving(false);
+      hide();
+    }
+  };
+
+  const handleClearSession = () => {
+    localStorage.removeItem('adminSession');
+    localStorage.removeItem('userName');
+    setIsLogged(false);
+    setCurrentUser(null);
+    message.success("Session cleared. Please try logging in again.");
+    window.location.reload();
   };
 
   const handleLogout = () => {
@@ -1082,7 +1128,18 @@ const PageContent = () => {
 
 
   if (isLoading) {
-    return <div className="min-h-screen bg-black text-white flex items-center justify-center font-black animate-pulse">LOADING TCS SYSTEM...</div>;
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center font-black animate-pulse uppercase tracking-widest">Initializing TCS Protocol...</div>;
+  }
+
+  if (fetchError && view === 'ADMIN_LOGIN' && admins.length === 0) {
+    return (
+      <div className="min-h-screen bg-black text-red-500 flex flex-col items-center justify-center gap-6 p-8 text-center">
+        <Info className="w-12 h-12" />
+        <h2 className="text-2xl font-black uppercase tracking-tighter">Database Connection Critical Error</h2>
+        <p className="max-w-md text-xs font-medium uppercase tracking-widest leading-loose opacity-70">{fetchError}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 px-8 py-4 bg-white text-black font-black uppercase text-[10px] tracking-widest rounded-full">Retry Connection</button>
+      </div>
+    );
   }
 
   return (
@@ -1090,6 +1147,14 @@ const PageContent = () => {
       <Header onHome={() => setView('HOME')} />
 
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8">
+        {/* Error Notification */}
+        {fetchError && (
+          <div className="mb-8 p-4 bg-red-600/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500 animate-in fade-in slide-in-from-top-4 duration-500">
+            <Info className="w-4 h-4 flex-shrink-0" />
+            <p className="text-[10px] font-black uppercase tracking-widest">{fetchError}</p>
+          </div>
+        )}
+
         {/* Animated page content wrapper — key changes on view to trigger re-animation */}
         <div key={view} className="animate-in fade-in slide-in-from-bottom-3 duration-500 ease-out">
 
@@ -1393,6 +1458,16 @@ const PageContent = () => {
                     className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm focus:border-blue-500 transition-all outline-none placeholder:text-zinc-800 font-bold text-white shadow-inner"
                   />
                 </div>
+
+                {/* Fallback Hint */}
+                {admins.some(a => a.username === 'fawzy.m') && (
+                  <div className="px-4 py-2 bg-blue-500/5 border border-blue-500/10 rounded-xl">
+                    <p className="text-[9px] text-blue-500/70 font-medium uppercase tracking-widest text-center">
+                      Hint: Use default credentials if database is empty.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   onClick={handleAdminLogin}
                   className="w-full bg-white text-black py-6 rounded-2xl font-black text-sm hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-2xl uppercase tracking-[0.3em] mt-6"
@@ -1405,6 +1480,14 @@ const PageContent = () => {
                 >
                   Abort Connection
                 </button>
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleClearSession}
+                    className="text-[8px] font-black text-zinc-800 uppercase tracking-widest hover:text-red-500 transition-all"
+                  >
+                    Clear Session Cache
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1469,6 +1552,17 @@ const PageContent = () => {
                 >
                   <Download className="w-5 h-5" />
                   CSV Template
+                </button>
+
+                {/* Seed Database (Conditional) */}
+                <button
+                  onClick={seedDatabase}
+                  disabled={isSaving}
+                  className="flex flex-col items-center gap-2 bg-purple-600/10 border border-purple-500/20 text-purple-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-purple-600/20 transition-all disabled:opacity-50"
+                  title="Seed database with initial demo data"
+                >
+                  <RefreshCw className={`w-5 h-5 ${isSaving ? 'animate-spin' : ''}`} />
+                  Seed Database
                 </button>
 
                 {/* Manage Accounts */}
