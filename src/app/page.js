@@ -1388,7 +1388,7 @@ const PageContent = () => {
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="w-24 h-24 rounded-[2rem] bg-yellow-500/10 flex items-center justify-center border border-yellow-500/20 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_30px_rgba(234,179,8,0.3)]">
-                    <ShieldCheck className="w-10 h-10 text-yellow-400" />
+                    <Building2 className="w-10 h-10 text-yellow-400" />
                   </div>
                   <div className="text-center space-y-2 relative z-10">
                     <h3 className="text-2xl font-black uppercase tracking-tight text-white group-hover:text-yellow-400 transition-colors">PQA Portal</h3>
@@ -1807,12 +1807,12 @@ const PageContent = () => {
                   TCS Workspace
                 </button>
                 <div className="w-[1px] h-8 bg-white/10 hidden md:block" />
-                <button 
+                 <button 
                   onClick={() => setAppMode('PQA_MX')}
                   disabled={currentUser.role !== 'SUPER_ADMIN' && currentUser.access !== 'PQA_ONLY' && currentUser.access !== 'ALL'}
                   className={`px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-20 disabled:cursor-not-allowed flex items-center gap-3 ${appMode === 'PQA_MX' ? 'bg-purple-600 text-white shadow-[0_0_20px_rgba(147,51,234,0.4)]' : 'text-zinc-500 hover:text-white'}`}
                 >
-                  <ShieldCheck className="w-4 h-4" />
+                  <Building2 className="w-4 h-4" />
                   PQA MX Division
                 </button>
                 <button 
@@ -1865,7 +1865,7 @@ const PageContent = () => {
                   className="flex flex-col items-center gap-2 bg-white text-black p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-zinc-200 transition-all shadow-xl"
                 >
                   <Plus className="w-5 h-5" />
-                  Add Engineer
+                  {appMode?.startsWith('PQA') ? 'Add Service Center' : 'Add Engineer'}
                 </button>
 
                 {/* Bulk Upload */}
@@ -2085,7 +2085,9 @@ const PageContent = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="h-[1px] w-8 bg-zinc-800" />
-                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Live Engineer Registry</h3>
+                    <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">
+                      Live {appMode?.startsWith('PQA') ? 'Service Center' : 'Engineer'} Registry
+                    </h3>
                   </div>
                   <button
                     onClick={() => setNoEngineers(!noEngineers)}
@@ -2284,19 +2286,42 @@ const PageContent = () => {
                             <div className="flex items-center gap-3">
                               <span className="text-xl font-black text-white uppercase tracking-tighter">{admin.name}</span>
                               {admin.role === 'SUPER_ADMIN' && <span className="text-[8px] bg-blue-600/10 text-blue-500 px-3 py-1 rounded-full border border-blue-600/20 font-black tracking-widest uppercase">Root</span>}
-                              {admin.role === 'ADMIN' && <span className="text-[8px] bg-emerald-600/10 text-emerald-500 px-3 py-1 rounded-full border border-emerald-600/20 font-black tracking-widest uppercase">{admin.access?.replace('_', ' ') || 'TCS ONLY'}</span>}
+                              <span className="text-[8px] bg-emerald-600/10 text-emerald-500 px-3 py-1 rounded-full border border-emerald-600/20 font-black tracking-widest uppercase">
+                                {admin.access === 'ALL' ? 'GLOBAL ACCESS' : (admin.access?.replace('_', ' ') || 'TCS ONLY')}
+                              </span>
                             </div>
                             <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mt-1">@ACCESS_ID: {admin.username}</span>
+                            <span className="text-[7px] font-black text-zinc-800 uppercase tracking-[0.2em] mt-1 italic">Policy: {admin.role} System</span>
                           </div>
                         </div>
-                        {admin.id !== '1' && (
-                          <button
-                            onClick={() => deleteAdminHandler(admin.id)}
-                            className="p-5 bg-black text-zinc-700 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {currentUser?.role === 'SUPER_ADMIN' && (
+                            <button
+                              onClick={() => {
+                                const newAccess = prompt(`Change access for ${admin.username}?\nOptions: TCS_ONLY, PQA_ONLY, ALL`, admin.access || 'TCS_ONLY');
+                                if (newAccess && ['TCS_ONLY', 'PQA_ONLY', 'ALL'].includes(newAccess.toUpperCase())) {
+                                  const updated = { ...admin, access: newAccess.toUpperCase() };
+                                  saveAdminToDb(updated).then(() => {
+                                    setAdmins(prev => prev.map(a => a.id === admin.id ? updated : a));
+                                    message.success("Authority Provisioned Successfully");
+                                  });
+                                }
+                              }}
+                              className="p-5 bg-zinc-800 text-zinc-500 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-xl"
+                              title="Edit Authority"
+                            >
+                              <Shield className="w-5 h-5" />
+                            </button>
+                          )}
+                          {admin.id !== '1' && (
+                            <button
+                              onClick={() => deleteAdminHandler(admin.id)}
+                              className="p-5 bg-black text-zinc-700 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-xl"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
