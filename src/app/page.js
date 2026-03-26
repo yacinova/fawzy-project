@@ -2491,14 +2491,13 @@ const PageContent = () => {
 
                   // The record whose data drives the performance bars
                   const dispRecord = profileViewMode === 'QUARTERLY' ? (qRecords[0] || selectedEngineer) : effRecord;
-                  const dispScore = profileViewMode === 'QUARTERLY' ? qAvgScore : effRecord.tcsScore;
-                  const dispDrnps = profileViewMode === 'QUARTERLY' ? qAvgDrnps : calculateDRNPS(effRecord.promoters, effRecord.detractors);
-                  const dispExam = profileViewMode === 'QUARTERLY' ? qAvgExam : parseFloat(effRecord.examScore || 0);
+                  // Weighted component pts - handle PQA vs TCS
+                  const dispExam = isPqaMode ? 0 : (profileViewMode === 'QUARTERLY' ? qAvgExam : parseFloat(effRecord.examScore || 0));
+                  const dispDrnps = isPqaMode ? parseFloat(effRecord.dRnps || 0) : (profileViewMode === 'QUARTERLY' ? qAvgDrnps : calculateDRNPS(effRecord.promoters, effRecord.detractors));
 
-                  // Weighted component pts
-                  const kpiPts = parseFloat(((dispScore - Math.min(20, (dispExam / 100) * 20) - Math.min(30, (dispDrnps / 100) * 30))).toFixed(1));
-                  const examPts = parseFloat(Math.min(20, (dispExam / 100) * 20).toFixed(1));
-                  const drnpsPts = parseFloat(Math.min(30, (dispDrnps / 100) * 30).toFixed(1));
+                  const examPts = isPqaMode ? 0 : parseFloat(Math.min(20, (dispExam / 100) * 20).toFixed(1));
+                  const drnpsPts = isPqaMode ? 0 : parseFloat(Math.min(30, (dispDrnps / 100) * 30).toFixed(1));
+                  const kpiPts = isPqaMode ? dispScore : parseFloat(((dispScore - examPts - drnpsPts)).toFixed(1));
 
                   return (
                     <div className="space-y-8">
@@ -2602,27 +2601,44 @@ const PageContent = () => {
                           </div>
 
                           <div className="space-y-10 py-4">
-                            {/* Primary metrics */}
-                            <div className="space-y-5">
-                              <p className="text-[8px] font-black text-blue-400 uppercase tracking-[0.4em]">Score Components</p>
-                              <MetricBar label="Exam Score" value={dispExam} max={100} suffix=" pts" target={90} />
-                              <MetricBar label="DRNPS" value={parseFloat(dispDrnps.toFixed(1))} max={100} suffix=" pts" target={80} />
-                            </div>
-
-                            {/* KPI metrics */}
-                            <div className="border-t border-white/5 pt-8 space-y-5">
-                              <p className="text-[8px] font-black text-yellow-400 uppercase tracking-[0.4em]">KPI Breakdown (50% of Total)</p>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-5">
-                                <MetricBar label="Training Attendance" value={parseFloat(dispRecord.trainingAttendance || 0)} max={100} suffix="%" target={100} />
-                                <MetricBar label="OQC Pass Rate" value={parseFloat(dispRecord.oqcPassRate || 0)} max={100} suffix="%" target={85} />
-                                <MetricBar label="Maintenance Mode" value={parseFloat(dispRecord.maintenanceModeRatio || 0)} max={100} suffix="%" target={65} />
-                                <MetricBar label="REDO Ratio" value={parseFloat(dispRecord.redoRatio || 0)} max={3} suffix="%" target={0.7} inverse />
-                                <MetricBar label="IQC Skip Ratio" value={parseFloat(dispRecord.iqcSkipRatio || 0)} max={50} suffix="%" target={25} inverse />
-                                <MetricBar label="Core Parts PBA" value={parseFloat(dispRecord.corePartsPBA || 0)} max={80} suffix="%" target={30} inverse />
-                                <MetricBar label="Core Parts Octa" value={parseFloat(dispRecord.corePartsOcta || 0)} max={80} suffix="%" target={40} inverse />
-                                <MetricBar label="Multi Parts Ratio" value={parseFloat(dispRecord.multiPartsRatio || 0)} max={5} suffix="%" target={1} inverse />
+                            {isPqaMode ? (
+                              <div className="space-y-8">
+                                <p className="text-[8px] font-black text-blue-400 uppercase tracking-[0.4em]">Operations Scoring Components</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                                  <MetricBar label="LTP" value={parseFloat(dispRecord.ltp || 0)} max={10} suffix=" pts" target={10} />
+                                  <MetricBar label="Ex-LTP" value={parseFloat(dispRecord.exLtp || 0)} max={10} suffix=" pts" target={10} />
+                                  <MetricBar label="REDO Rate" value={parseFloat(dispRecord.redo || 0)} max={10} suffix=" pts" target={10} />
+                                  <MetricBar label="SSR Utilization" value={parseFloat(dispRecord.ssr || 0)} max={20} suffix=" pts" target={20} />
+                                  <MetricBar label="D-RNPS" value={parseFloat(dispRecord.dRnps || 0)} max={20} suffix=" pts" target={20} />
+                                  <MetricBar label="OFS Accuracy" value={parseFloat(dispRecord.ofs || 0)} max={10} suffix=" pts" target={10} />
+                                  <MetricBar label="R-CXE Quality" value={parseFloat(dispRecord.rCxe || 0)} max={10} suffix=" pts" target={10} />
+                                  <MetricBar label="SDR Score" value={parseFloat(dispRecord.sdr || 0)} max={10} suffix=" pts" target={10} />
+                                  <MetricBar label="Process Audit" value={parseFloat(dispRecord.audit || 0)} max={5} suffix=" ded" target={0} inverse />
+                                  <MetricBar label="Policy Review (PR)" value={parseFloat(dispRecord.pr || 0)} max={5} suffix=" ded" target={0} inverse />
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              <>
+                                <div className="space-y-5">
+                                  <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Score Components</p>
+                                  <MetricBar label="Exam Score" value={dispExam} max={100} suffix=" pts" target={90} />
+                                  <MetricBar label="DRNPS" value={parseFloat(dispDrnps.toFixed(1))} max={100} suffix=" pts" target={80} />
+                                </div>
+                                <div className="border-t border-white/5 pt-8 space-y-5">
+                                  <p className="text-[8px] font-black text-yellow-400 uppercase tracking-widest">KPI Breakdown (50% of Total)</p>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-5">
+                                    <MetricBar label="Training Attendance" value={parseFloat(dispRecord.trainingAttendance || 0)} max={100} suffix="%" target={100} />
+                                    <MetricBar label="OQC Pass Rate" value={parseFloat(dispRecord.oqcPassRate || 0)} max={100} suffix="%" target={85} />
+                                    <MetricBar label="Maintenance Mode" value={parseFloat(dispRecord.maintenanceModeRatio || 0)} max={100} suffix="%" target={65} />
+                                    <MetricBar label="REDO Ratio" value={parseFloat(dispRecord.redoRatio || 0)} max={3} suffix="%" target={0.7} inverse />
+                                    <MetricBar label="IQC Skip Ratio" value={parseFloat(dispRecord.iqcSkipRatio || 0)} max={50} suffix="%" target={25} inverse />
+                                    <MetricBar label="Core Parts PBA" value={parseFloat(dispRecord.corePartsPBA || 0)} max={80} suffix="%" target={30} inverse />
+                                    <MetricBar label="Core Parts Octa" value={parseFloat(dispRecord.corePartsOcta || 0)} max={80} suffix="%" target={40} inverse />
+                                    <MetricBar label="Multi Parts Ratio" value={parseFloat(dispRecord.multiPartsRatio || 0)} max={5} suffix="%" target={1} inverse />
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
 
