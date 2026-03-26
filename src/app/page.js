@@ -449,6 +449,19 @@ const PageContent = () => {
     }
   }, [view]);
 
+  // Helper to ensure PQA Service Center photo is displayed correctly
+  const getPhotoUrl = (eng) => {
+    if (!eng) return 'https://picsum.photos/200';
+    const isPqa = appMode?.startsWith('PQA');
+    if (isPqa) {
+      // If it's a placeholder or a default picsum, use the Service Center photo
+      if (!eng.photoUrl || eng.photoUrl.includes('picsum') || eng.photoUrl.includes('default')) {
+        return PQA_SERVICE_CENTER_PHOTO;
+      }
+    }
+    return eng.photoUrl || 'https://picsum.photos/200';
+  };
+
   // Record visit on mount & session end on tab close
   const isLoggedRef = React.useRef(isLogged);
   useEffect(() => { isLoggedRef.current = isLogged; }, [isLogged]);
@@ -1575,7 +1588,7 @@ const PageContent = () => {
                           <div className="relative flex-shrink-0 w-14 h-14">
                             <img src={TIER_META[eng.tier]?.img || TIER_META.Bronze.img} alt={eng.tier} className="w-14 h-14 object-contain tier-emblem-blend" />
                           </div>
-                          <img src={eng.photoUrl} className={`w-14 h-14 rounded-2xl object-cover flex-shrink-0 ${isFirst ? 'border-2 border-yellow-500' : 'border border-white/10'}`} alt={eng.name} />
+                          <img src={getPhotoUrl(eng)} className={`w-14 h-14 rounded-2xl object-cover flex-shrink-0 ${isFirst ? 'border-2 border-yellow-500' : 'border border-white/10'}`} alt={eng.name} />
                           <div className="flex-1 min-w-0">
                             <h4 className={`text-base md:text-lg font-black uppercase tracking-tight truncate ${isFirst ? 'text-yellow-400' : 'text-white'}`}>{eng.name}</h4>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -1641,7 +1654,7 @@ const PageContent = () => {
                           <div className="relative flex-shrink-0 w-14 h-14">
                             <img src={TIER_META[eng.tier]?.img || TIER_META.Bronze.img} alt={eng.tier} className="w-14 h-14 object-contain tier-emblem-blend" />
                           </div>
-                          <img src={eng.photoUrl} className={`w-14 h-14 rounded-2xl object-cover flex-shrink-0 ${isFirst ? 'border-2 border-yellow-500' : 'border border-white/10'}`} alt={eng.name} />
+                          <img src={getPhotoUrl(eng)} className={`w-14 h-14 rounded-2xl object-cover flex-shrink-0 ${isFirst ? 'border-2 border-yellow-500' : 'border border-white/10'}`} alt={eng.name} />
                           <div className="flex-1 min-w-0">
                             <h4 className={`text-base md:text-lg font-black uppercase tracking-tight truncate ${isFirst ? 'text-yellow-400' : 'text-white'}`}>{eng.name}</h4>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -2156,7 +2169,7 @@ const PageContent = () => {
                     {fetchedHiddenEngineers.map(eng => (
                       <div key={eng.id} className="bg-red-950/10 border border-red-900/20 p-6 rounded-3xl flex items-center justify-between group hover:bg-red-900/20 transition-all">
                         <div className="flex items-center gap-5">
-                          <img src={eng.photoUrl} className="w-12 h-12 rounded-xl object-cover grayscale opacity-40 shadow-2xl" alt={eng.name} />
+                          <img src={getPhotoUrl(eng)} className="w-12 h-12 rounded-xl object-cover grayscale opacity-40 shadow-2xl" alt={eng.name} />
                           <div>
                             <p className="text-sm font-black text-zinc-500 uppercase tracking-tight line-through opacity-50">{eng.name}</p>
                             <span className="text-[9px] font-black text-red-500 tracking-widest uppercase mt-1 block">ARCHIVED : {eng.code}</span>
@@ -2182,7 +2195,7 @@ const PageContent = () => {
                     <div key={eng.id} className="bg-black hover:bg-zinc-900/50 transition-all p-3 md:p-6 flex items-center justify-between gap-2 group">
                       <div className="flex items-center gap-3 md:gap-6 min-w-0 flex-1">
                         <div className="w-10 h-10 md:w-14 md:h-14 relative flex-shrink-0">
-                          <img src={eng.photoUrl} className="w-full h-full rounded-xl md:rounded-2xl object-cover grayscale-50 group-hover:grayscale-0 transition-all shadow-2xl shadow-black/80" alt={eng.name} />
+                          <img src={getPhotoUrl(eng)} className="w-full h-full rounded-xl md:rounded-2xl object-cover grayscale-50 group-hover:grayscale-0 transition-all shadow-2xl shadow-black/80" alt={eng.name} />
                           <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full border-2 border-black bg-black flex items-center justify-center">
                             <img src={TIER_META[eng.tier]?.img || TIER_META.Bronze.img} alt={eng.tier} className="w-4 h-4 object-contain tier-emblem-blend" />
                           </div>
@@ -2407,11 +2420,7 @@ const PageContent = () => {
                   <div className="flex flex-col items-center md:items-start gap-8">
                     <div className="relative group">
                       <div className="absolute -inset-4 bg-blue-600/20 blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
-                      <img 
-                        src={(appMode?.startsWith('PQA') && selectedEngineer.photoUrl?.includes('picsum')) ? PQA_SERVICE_CENTER_PHOTO : selectedEngineer.photoUrl} 
-                        className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] md:rounded-[3.5rem] object-cover border-4 border-zinc-800 shadow-3xl grayscale-50 group-hover:grayscale-0 transition-all duration-500" 
-                        alt={selectedEngineer.name} 
-                      />
+                      <img src={getPhotoUrl(selectedEngineer)} className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] md:rounded-[3.5rem] object-cover border-4 border-zinc-800 shadow-3xl grayscale-50 group-hover:grayscale-0 transition-all duration-500" alt={selectedEngineer.name} />
                       <div className="absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shadow-2xl border-4 border-black z-20 bg-black">
                         <img src={TIER_META[selectedEngineer.tier]?.img || TIER_META.Bronze.img} alt={selectedEngineer.tier} className="w-7 h-7 md:w-9 md:h-9 object-contain tier-emblem-blend" />
                       </div>
@@ -3285,7 +3294,7 @@ const PageContent = () => {
                         className="relative w-32 h-32 md:w-64 md:h-64 rounded-[2.5rem] md:rounded-[4rem] border-4 border-zinc-800 overflow-hidden cursor-pointer shadow-3xl transition-all hover:border-blue-500 group"
                         onClick={() => fileInputRef.current?.click()}
                       >
-                        <img src={(appMode?.startsWith('PQA') && editingEng.photoUrl?.includes('picsum')) ? PQA_SERVICE_CENTER_PHOTO : editingEng.photoUrl} className="w-full h-full object-cover grayscale-50 group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100" alt="Profile" />
+                        <img src={getPhotoUrl(editingEng)} className="w-full h-full object-cover grayscale-50 group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100" alt="Profile" />
                         <div className="absolute inset-0 bg-blue-600/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md">
                           <Camera className="w-10 h-10 text-white mb-2" />
                           <span className="text-[10px] font-black uppercase text-white tracking-[0.4em]">Update Capture</span>
