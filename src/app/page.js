@@ -1333,8 +1333,8 @@ const PageContent = () => {
                   className="group relative h-80 rounded-[3rem] p-10 flex flex-col items-center justify-center gap-6 overflow-hidden border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2 shadow-2xl"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="w-24 h-24 rounded-[2rem] bg-purple-500/10 flex items-center justify-center border border-purple-500/20 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]">
-                    <Layers className="w-10 h-10 text-purple-400" />
+                  <div className="w-24 h-24 rounded-[2rem] bg-zinc-950 flex items-center justify-center border border-purple-500/20 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_40px_rgba(168,85,247,0.2)]">
+                    <img src="./mx_logo.png" alt="MX" className="w-16 h-16 object-contain rounded-xl" />
                   </div>
                   <div className="text-center space-y-2 relative z-10">
                     <h3 className="text-2xl font-black uppercase tracking-tight text-white group-hover:text-purple-400 transition-colors">MX Division</h3>
@@ -1348,8 +1348,8 @@ const PageContent = () => {
                   className="group relative h-80 rounded-[3rem] p-10 flex flex-col items-center justify-center gap-6 overflow-hidden border border-white/5 bg-zinc-900/40 hover:bg-zinc-900/80 hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-2 shadow-2xl"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="w-24 h-24 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                    <Activity className="w-10 h-10 text-emerald-400" />
+                  <div className="w-24 h-24 rounded-[2rem] bg-zinc-950 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                    <img src="./ce_logo.png" alt="CE" className="w-16 h-16 object-contain rounded-xl" />
                   </div>
                   <div className="text-center space-y-2 relative z-10">
                     <h3 className="text-2xl font-black uppercase tracking-tight text-white group-hover:text-emerald-400 transition-colors">CE Division</h3>
