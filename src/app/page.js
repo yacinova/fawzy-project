@@ -76,6 +76,8 @@ const TIER_META = {
   Silver: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FSilver%202.png?alt=media&token=05ebda06-4011-4920-ac19-dd0b9fa9e3fb', border: 'border-zinc-400', text: 'text-zinc-300', glow: 'shadow-zinc-400/30' },
   Bronze: { img: 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/Ranking%20Tiers%2FBronze%202.png?alt=media&token=ec56f9b5-f567-4778-b0b2-4df15fe0a840', border: 'border-orange-600', text: 'text-orange-400', glow: 'shadow-orange-600/30' },
 };
+
+const PQA_SERVICE_CENTER_PHOTO = 'https://firebasestorage.googleapis.com/v0/b/tcs-for-engineers.firebasestorage.app/o/PQA%2Fservice%20centers.png?alt=media';
 const TierBadge = ({ tier, size = 'md' }) => {
   const meta = TIER_META[tier] || TIER_META.Bronze;
   const sizeClass = size === 'sm'
@@ -1884,7 +1886,9 @@ const PageContent = () => {
                 {/* Add Engineer */}
                 <button
                   onClick={() => setEditingEng({
-                    id: '', name: '', code: '', photoUrl: 'https://picsum.photos/200', asc: '', partnerName: '', month: 'March', year: '2026',
+                    id: '', name: '', code: '', 
+                    photoUrl: appMode?.startsWith('PQA') ? PQA_SERVICE_CENTER_PHOTO : 'https://picsum.photos/200',
+                    asc: '', partnerName: '', month: 'March', year: '2026',
                     redoRatio: '', iqcSkipRatio: '', maintenanceModeRatio: '', oqcPassRate: '',
                     trainingAttendance: '', corePartsPBA: '', corePartsOcta: '', multiPartsRatio: '',
                     examScore: '', promoters: '', detractors: '', tcsScore: 0, tier: 'Bronze'
@@ -2403,7 +2407,11 @@ const PageContent = () => {
                   <div className="flex flex-col items-center md:items-start gap-8">
                     <div className="relative group">
                       <div className="absolute -inset-4 bg-blue-600/20 blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
-                      <img src={selectedEngineer.photoUrl} className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] md:rounded-[3.5rem] object-cover border-4 border-zinc-800 shadow-3xl grayscale-50 group-hover:grayscale-0 transition-all duration-500" alt={selectedEngineer.name} />
+                      <img 
+                        src={(appMode?.startsWith('PQA') && selectedEngineer.photoUrl?.includes('picsum')) ? PQA_SERVICE_CENTER_PHOTO : selectedEngineer.photoUrl} 
+                        className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-[2.5rem] md:rounded-[3.5rem] object-cover border-4 border-zinc-800 shadow-3xl grayscale-50 group-hover:grayscale-0 transition-all duration-500" 
+                        alt={selectedEngineer.name} 
+                      />
                       <div className="absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shadow-2xl border-4 border-black z-20 bg-black">
                         <img src={TIER_META[selectedEngineer.tier]?.img || TIER_META.Bronze.img} alt={selectedEngineer.tier} className="w-7 h-7 md:w-9 md:h-9 object-contain tier-emblem-blend" />
                       </div>
@@ -3277,7 +3285,7 @@ const PageContent = () => {
                         className="relative w-32 h-32 md:w-64 md:h-64 rounded-[2.5rem] md:rounded-[4rem] border-4 border-zinc-800 overflow-hidden cursor-pointer shadow-3xl transition-all hover:border-blue-500 group"
                         onClick={() => fileInputRef.current?.click()}
                       >
-                        <img src={editingEng.photoUrl} className="w-full h-full object-cover grayscale-50 group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100" alt="Profile" />
+                        <img src={(appMode?.startsWith('PQA') && editingEng.photoUrl?.includes('picsum')) ? PQA_SERVICE_CENTER_PHOTO : editingEng.photoUrl} className="w-full h-full object-cover grayscale-50 group-hover:grayscale-0 transition-all duration-700 scale-110 group-hover:scale-100" alt="Profile" />
                         <div className="absolute inset-0 bg-blue-600/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md">
                           <Camera className="w-10 h-10 text-white mb-2" />
                           <span className="text-[10px] font-black uppercase text-white tracking-[0.4em]">Update Capture</span>
