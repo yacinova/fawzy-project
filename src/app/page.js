@@ -1912,45 +1912,51 @@ const PageContent = () => {
                 </button>
 
                 {/* Seed Database (Conditional) */}
-                <button
-                  onClick={seedDatabase}
-                  disabled={isSaving}
-                  className="flex flex-col items-center gap-2 bg-purple-600/10 border border-purple-500/20 text-purple-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-purple-600/20 transition-all disabled:opacity-50"
-                  title="Seed database with initial demo data"
-                >
-                  <RefreshCw className={`w-5 h-5 ${isSaving ? 'animate-spin' : ''}`} />
-                  Seed Database
-                </button>
+                {currentUser?.role === 'SUPER_ADMIN' && (
+                  <button
+                    onClick={seedDatabase}
+                    disabled={isSaving}
+                    className="flex flex-col items-center gap-2 bg-purple-600/10 border border-purple-500/20 text-purple-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-purple-600/20 transition-all disabled:opacity-50"
+                    title="Seed database with initial demo data"
+                  >
+                    <RefreshCw className={`w-5 h-5 ${isSaving ? 'animate-spin' : ''}`} />
+                    Seed Database
+                  </button>
+                )}
 
                 {/* Manage Accounts */}
-                <button
-                  onClick={() => setView('PROFILE_MGMT')}
-                  className="flex flex-col items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-zinc-800 hover:text-white transition-all"
-                >
-                  <Settings className="w-5 h-5" />
-                  Manage Accounts
-                </button>
+                {currentUser?.role === 'SUPER_ADMIN' && (
+                  <button
+                    onClick={() => setView('PROFILE_MGMT')}
+                    className="flex flex-col items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-zinc-800 hover:text-white transition-all"
+                  >
+                    <Settings className="w-5 h-5" />
+                    Manage Accounts
+                  </button>
+                )}
 
-                {/* TCS Guide */}
+                {/* Guide Button */}
                 <button
-                  onClick={() => setView('TCS_INFO')}
+                  onClick={() => setView(isPqaMode ? 'PQA_INFO' : 'TCS_INFO')}
                   className="flex flex-col items-center gap-2 bg-zinc-900 border border-white/5 text-zinc-400 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider hover:bg-zinc-800 hover:text-white transition-all"
                 >
                   <BookOpen className="w-5 h-5" />
-                  TCS Guide
+                  {isPqaMode ? 'PQA Guide' : 'TCS Guide'}
                 </button>
 
                 {/* Actions Log toggle */}
-                <button
-                  onClick={() => { setShowActivityLog(v => !v); if (!showActivityLog) loadLogs(); }}
-                  className={`flex flex-col items-center gap-2 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all border ${showActivityLog
-                    ? 'bg-emerald-600/10 border-emerald-500/30 text-emerald-400'
-                    : 'bg-zinc-900 border-white/5 text-zinc-400 hover:bg-zinc-800 hover:text-white'
-                    }`}
-                >
-                  <Activity className="w-5 h-5" />
-                  Actions Log
-                </button>
+                {currentUser?.role === 'SUPER_ADMIN' && (
+                  <button
+                    onClick={() => { setShowActivityLog(v => !v); if (!showActivityLog) loadLogs(); }}
+                    className={`flex flex-col items-center gap-2 p-5 rounded-2xl font-black text-[10px] uppercase tracking-wider transition-all border ${showActivityLog
+                      ? 'bg-emerald-600/10 border-emerald-500/30 text-emerald-400'
+                      : 'bg-zinc-900 border-white/5 text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                      }`}
+                  >
+                    <Activity className="w-5 h-5" />
+                    Actions Log
+                  </button>
+                )}
 
                 {/* Clear Division Data */}
                 {currentUser?.role === 'SUPER_ADMIN' && (
@@ -1976,8 +1982,8 @@ const PageContent = () => {
                 )}
               </div>
 
-              {/* Analytics Panel */}
-              {analyticsSummary && (() => {
+              {/* Analytics Panel (Super Admin Only) */}
+              {currentUser?.role === 'SUPER_ADMIN' && analyticsSummary && (() => {
                 const today = new Date().toISOString().slice(0, 10);
                 const todayVisitors = analyticsSummary.dailyVisitorHits?.[today] || 0;
                 const todayAdmins = analyticsSummary.dailyAdminLogins?.[today] || 0;
@@ -1991,65 +1997,57 @@ const PageContent = () => {
                   <div className="glass-card rounded-[2.5rem] p-8 space-y-6 border border-blue-500/10">
                     <div className="flex items-center gap-3 border-b border-white/5 pb-4">
                       <BarChart3 className="w-4 h-4 text-blue-400" />
-                      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">App Analytics</h3>
-                      <span className="ml-auto text-[8px] font-black text-zinc-700 uppercase tracking-widest">Live · Firestore</span>
+                      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em]">Global App Analytics</h3>
                       <button
                         onClick={refreshAnalytics}
                         disabled={analyticsLoading}
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-600/10 border border-blue-500/20 rounded-full text-[8px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-600/20 transition-all disabled:opacity-40"
+                        className="ml-auto flex items-center gap-1 px-3 py-1 bg-blue-600/10 border border-blue-500/20 rounded-full text-[8px] font-black text-blue-400 uppercase tracking-widest hover:bg-blue-600/20 transition-all disabled:opacity-40"
                       >
                         <RefreshCw className={`w-3 h-3 ${analyticsLoading ? 'animate-spin' : ''}`} />
-                        {analyticsLoading ? 'Loading…' : 'Refresh'}
+                         Refresh
                       </button>
                     </div>
 
-                    {/* Visitor Stats */}
-                    <div className="space-y-3">
-                      <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">👤 Visitor Traffic</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">All-Time Visits</p>
-                          <p className="text-2xl font-black text-emerald-400 italic">{analyticsSummary.visitorHits ?? '—'}</p>
-                        </div>
-                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Today</p>
-                          <p className="text-2xl font-black text-emerald-400 italic">{todayVisitors}</p>
-                          <p className="text-[7px] text-zinc-700 mt-1">{today}</p>
-                        </div>
-                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Sessions</p>
-                          <p className="text-2xl font-black text-emerald-400 italic">{analyticsSummary.visitorSessions ?? '—'}</p>
-                        </div>
-                        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Time</p>
-                          <p className="text-2xl font-black text-emerald-400 italic">{avgVMin}m {avgVSec}s</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                       {/* Visitor Stats */}
+                       <div className="space-y-4">
+                        <p className="text-[8px] font-black text-purple-500 uppercase tracking-widest flex items-center gap-2">
+                          <UserCircle className="w-3 h-3" /> Visitor Traffic
+                        </p>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Total Hits</p>
+                            <p className="text-2xl font-black text-emerald-400 italic">{analyticsSummary.visitorHits ?? '—'}</p>
+                          </div>
+                          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Today</p>
+                            <p className="text-2xl font-black text-emerald-400 italic">{todayVisitors}</p>
+                          </div>
+                          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 text-center">
+                            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Time</p>
+                            <p className="text-sm font-black text-emerald-400 italic">{avgVMin}m {avgVSec}s</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Divider */}
-                    <div className="border-t border-white/5" />
-
-                    {/* Admin Stats */}
-                    <div className="space-y-3">
-                      <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">🛡️ Admin Activity</p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">All-Time Logins</p>
-                          <p className="text-2xl font-black text-blue-400 italic">{analyticsSummary.adminLogins ?? '—'}</p>
-                        </div>
-                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Today</p>
-                          <p className="text-2xl font-black text-blue-400 italic">{todayAdmins}</p>
-                          <p className="text-[7px] text-zinc-700 mt-1">{today}</p>
-                        </div>
-                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Sessions</p>
-                          <p className="text-2xl font-black text-blue-400 italic">{analyticsSummary.adminSessions ?? '—'}</p>
-                        </div>
-                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
-                          <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Time</p>
-                          <p className="text-2xl font-black text-blue-400 italic">{avgAMin}m {avgASec}s</p>
+                      {/* Admin Stats */}
+                      <div className="space-y-4">
+                        <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                          <ShieldCheck className="w-3 h-3" /> Admin Activity
+                        </p>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Logins</p>
+                            <p className="text-2xl font-black text-blue-400 italic">{analyticsSummary.adminLogins ?? '—'}</p>
+                          </div>
+                          <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Today</p>
+                            <p className="text-2xl font-black text-blue-400 italic">{todayAdmins}</p>
+                          </div>
+                          <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 text-center">
+                            <p className="text-[7px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Time</p>
+                            <p className="text-sm font-black text-blue-400 italic">{avgAMin}m {avgASec}s</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3063,6 +3061,87 @@ const PageContent = () => {
             </div>
           )}
 
+
+          {/* ─── PQA INFO / REFERENCE VIEW ─────────────────────────────────────────── */}
+          {view === 'PQA_INFO' && (
+            <div className="space-y-16 animate-in slide-in-from-bottom-4 duration-700">
+              {/* Header */}
+              <div className="text-center space-y-4 border-b border-white/5 pb-12">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="h-[1px] w-16 bg-blue-500/50" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500">Service Center Guide</span>
+                  <div className="h-[1px] w-16 bg-blue-500/50" />
+                </div>
+                <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-white uppercase italic">PQA<br />Reference Guide</h2>
+                <p className="text-zinc-500 text-sm font-medium max-w-lg mx-auto">Performance & Quality Assurance — The standard for Samsung Service Center excellence.</p>
+              </div>
+
+              {/* What is PQA */}
+              <div className="glass-card rounded-[3rem] p-10 md:p-16 space-y-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-600/20">
+                    <Building2 className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight">What is PQA Ranking?</h3>
+                </div>
+                <p className="text-zinc-400 leading-relaxed text-sm">
+                  The <strong className="text-white">PQA Ranking</strong> evaluates Samsung Service Centers based on operational efficiency, repair quality, and customer experience. Unlike individual engineer TCS scores, PQA aggregated data focuses on center-wide performance (LTP, REDO, SDR) and adherence to official field audit protocols.
+                </p>
+              </div>
+
+              {/* PQA Metrics Breakdown */}
+              <div className="space-y-8">
+                <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] text-center">Core Operational Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { label: 'LTP (Life-Time Perf)', pts: '10 pts', desc: 'Accumulated performance score focusing on long-term repair stability.' },
+                    { label: 'Ex-LTP (Expert LTP)', pts: '10 pts', desc: 'Performance on complex technical cases and high-end device repairs.' },
+                    { label: 'REDO Rate', pts: '10 pts', desc: 'Service quality indicator measuring devices that returned within the warranty period.' },
+                    { label: 'SSR Utilization', pts: '20 pts', desc: 'Sub-Service Rate: Efficiency in using official Samsung logistics and sub-channels.' },
+                    { label: 'D-RNPS', pts: '20 pts', desc: 'Retail Net Promoter Score for the service center, evaluating customer satisfaction.' },
+                    { label: 'OFS Accuracy', pts: '10 pts', desc: 'Operation Field Score: Adherence to operational protocols and reporting accuracy.' },
+                    { label: 'R-CXE Experience', pts: '10 pts', desc: 'Customer Experience quality measured through environment and staff interaction.' },
+                    { label: 'SDR Delivery', pts: '10 pts', desc: 'Service Delivery Rate: Speed and accuracy of device processing and return.' },
+                  ].map(({ label, pts, desc }) => (
+                    <div key={label} className="bg-zinc-900 shadow-xl border border-white/5 rounded-3xl p-8 space-y-3 group hover:border-blue-500/30 transition-all">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-black text-white uppercase tracking-tight group-hover:text-blue-400">{label}</span>
+                        <span className="text-[10px] font-black text-yellow-500 uppercase">{pts}</span>
+                      </div>
+                      <p className="text-zinc-500 text-xs leading-relaxed">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Deductions */}
+              <div className="bg-red-950/20 border border-red-500/20 rounded-[3rem] p-10 md:p-16 space-y-8">
+                 <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-600/10 rounded-2xl flex items-center justify-center border border-red-500/20">
+                    <Shield className="w-6 h-6 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-tight">System Deductions</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <p className="text-sm font-black text-red-400 uppercase tracking-tight">Audit Shortfalls (Max -5 pts)</p>
+                    <p className="text-zinc-500 text-xs text-pretty">Specific point deductions triggered by monthly field process audits and inventory checks.</p>
+                  </div>
+                   <div className="space-y-3">
+                    <p className="text-sm font-black text-red-400 uppercase tracking-tight">Policy Review - PR (Max -5 pts)</p>
+                    <p className="text-zinc-500 text-xs text-pretty">Non-compliance with the latest Samsung Global Service Policies or environmental standards.</p>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setView('ADMIN_DASHBOARD')}
+                className="w-full py-6 bg-white text-black rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-zinc-200 transition-all"
+              >
+                Return to Dashboard
+              </button>
+            </div>
+          )}
 
           {/* ─── FEEDBACK VIEW ────────────────────────────────────────────── */}
           {view === 'FEEDBACK' && (
