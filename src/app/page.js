@@ -217,44 +217,64 @@ const RankReveal3D = ({ tier, score, name, onDismiss }) => {
 
 // --- Sub-components ---
 
-const Header = ({ onHome }) => (
-  <header className="sticky top-0 z-[100] px-6 py-4 md:px-12 md:py-5 bg-black/95 backdrop-blur-3xl border-b border-white/10 animate-in fade-in slide-in-from-top-4 duration-700">
-    <div className="max-w-[1400px] mx-auto grid grid-cols-3 items-center gap-4">
+const Header = ({ onHome, appMode }) => {
+  const rightLogo = useMemo(() => {
+    if (appMode === 'PQA_MX') return './mx_logo.png';
+    if (appMode === 'PQA_CE') return './ce_logo.png';
+    return './fawzy-logo.png';
+  }, [appMode]);
 
-      {/* Left — Samsung logo */}
-      <div
-        className="flex items-center cursor-pointer group"
-        onClick={onHome}
-      >
-        <div className="relative">
-          <div className="absolute -inset-4 bg-white/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" />
+  const slogan = useMemo(() => {
+    if (appMode === 'PQA_MX') return 'Mobile Experience • Ranking';
+    if (appMode === 'PQA_CE') return 'Home Appliances • Ranking';
+    return 'Earn Your Tier • Own Your Title';
+  }, [appMode]);
+
+  return (
+    <header className="sticky top-0 z-[100] px-6 py-4 md:px-12 md:py-5 bg-black/95 backdrop-blur-3xl border-b border-white/10 animate-in fade-in slide-in-from-top-4 duration-700">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-3 items-center gap-4">
+
+        {/* Left — Samsung logo */}
+        <div
+          className="flex items-center cursor-pointer group"
+          onClick={onHome}
+        >
+          <div className="relative">
+            <div className="absolute -inset-4 bg-white/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-all duration-700" />
+            <img
+              src="./sam_logo.png"
+              alt="Samsung Logo"
+              className="h-10 md:h-14 w-auto object-contain brightness-110 group-hover:scale-110 transition-transform duration-500 relative z-10"
+            />
+          </div>
+        </div>
+
+        {/* Center — Slogan */}
+        <div className="flex flex-col items-center text-center gap-1">
+          <p className="text-[8px] md:text-[11px] uppercase tracking-[0.35em] md:tracking-[0.5em] text-zinc-400 font-black leading-relaxed">
+            {slogan.split(' • ').map((s, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span className="hidden md:inline"> • </span>}
+                {i > 0 && <br className="md:hidden" />}
+                {s}
+              </React.Fragment>
+            ))}
+          </p>
+        </div>
+
+        {/* Right — Dynamic logo */}
+        <div className="flex items-center justify-end group">
           <img
-            src="./sam_logo.png"
-            alt="Samsung Logo"
-            className="h-10 md:h-14 w-auto object-contain brightness-110 group-hover:scale-110 transition-transform duration-500 relative z-10"
+            src={rightLogo}
+            alt="Environment Logo"
+            className="h-10 md:h-14 w-auto object-contain brightness-110 group-hover:scale-105 transition-transform duration-500 rounded-lg"
           />
         </div>
-      </div>
 
-      {/* Center — Slogan */}
-      <div className="flex flex-col items-center text-center gap-1">
-        <p className="text-[8px] md:text-[11px] uppercase tracking-[0.35em] md:tracking-[0.5em] text-zinc-400 font-black leading-relaxed">
-          Earn Your Tier<br className="md:hidden" /><span className="hidden md:inline"> • </span>Own Your Title
-        </p>
       </div>
-
-      {/* Right — TCS / Fawzy logo */}
-      <div className="flex items-center justify-end group">
-        <img
-          src="./fawzy-logo.png"
-          alt="TCS Logo"
-          className="h-10 md:h-14 w-auto object-contain brightness-110 group-hover:scale-105 transition-transform duration-500"
-        />
-      </div>
-
-    </div>
-  </header>
-);
+    </header>
+  );
+};
 
 const MetricBar = ({ label, value, max = 100, suffix = "", target = null, color = "bg-blue-600", inverse = false }) => {
   const pct = Math.min(100, Math.max(0, (Number(value) / max) * 100));
@@ -593,10 +613,11 @@ const PageContent = () => {
         if (!code) return;
         if (!byCode[code] || e.tcsScore > byCode[code].tcsScore) byCode[code] = e;
       });
+    const limit = (appMode === 'PQA_MX' || appMode === 'PQA_CE') ? 20 : 10;
     return Object.values(byCode)
       .sort((a, b) => b.tcsScore - a.tcsScore)
-      .slice(0, 10);
-  }, [engineers, effectiveHofMonth]);
+      .slice(0, limit);
+  }, [engineers, effectiveHofMonth, appMode]);
 
   // ─── Quarterly: all unique quarter keys, sorted latest-first ─────────────────
   const allQuarterKeys = useMemo(() => {
@@ -1219,7 +1240,7 @@ const PageContent = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col pb-24 selection:bg-blue-600 selection:text-white">
-      <Header onHome={() => setView('HOME')} />
+      <Header onHome={() => setView('HOME')} appMode={appMode} />
 
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8">
         {/* Error Notification */}
@@ -1350,8 +1371,9 @@ const PageContent = () => {
                   </span>
                   <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-400">Next-Gen TCS</p>
                 </div>
-                <h2 className="text-4xl md:text-7xl font-black tracking-tighter text-white">
-                  Beyond<span className="text-blue-600"> Standards</span><br />Above<span className="text-blue-600"> Average</span>
+                <h2 className="text-4xl md:text-7xl font-black tracking-tighter text-white uppercase">
+                  {appMode?.startsWith('PQA') ? 'Evolution' : 'Beyond'}<span className="text-blue-600"> {appMode?.startsWith('PQA') ? 'in Quality' : 'Standards'}</span><br />
+                  {appMode?.startsWith('PQA') ? 'Defined' : 'Above'}<span className="text-blue-600"> {appMode?.startsWith('PQA') ? 'by Rank' : 'Average'}</span>
                 </h2>
               </section>
 
@@ -1412,9 +1434,11 @@ const PageContent = () => {
                     </button>
                   </div>
 
-                  {/* Top 10 List Monthly */}
+                  {/* Ranking List Monthly */}
                   <div className="space-y-4">
-                    <h3 className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6">Top 10 Engineers</h3>
+                    <h3 className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6">
+                      Top {(appMode === 'PQA_MX' || appMode === 'PQA_CE') ? '20' : '10'} {appMode?.startsWith('PQA') ? 'Service Centers' : 'Engineers'}
+                    </h3>
                     {hofTop10.length === 0 ? (
                       <div className="text-center p-20 text-zinc-700 font-black uppercase tracking-widest bg-zinc-900/30 rounded-[3rem] border border-white/5">No data for this period.</div>
                     ) : hofTop10.map((eng, idx) => {
@@ -1476,12 +1500,14 @@ const PageContent = () => {
                     </button>
                   </div>
 
-                  {/* Top 10 List Quarterly */}
+                  {/* Ranking List Quarterly */}
                   <div className="space-y-4">
-                    <h3 className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6">Top 10 Engineers (Quarterly Avg)</h3>
-                    {quarterlyRanking.slice(0, 10).length === 0 ? (
+                    <h3 className="text-center text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-6">
+                      Top {(appMode === 'PQA_MX' || appMode === 'PQA_CE') ? '20' : '10'} {appMode?.startsWith('PQA') ? 'Centers' : 'Engineers'} (Quarterly Avg)
+                    </h3>
+                    {quarterlyRanking.slice(0, (appMode?.startsWith('PQA') ? 20 : 10)).length === 0 ? (
                       <div className="text-center p-20 text-zinc-700 font-black uppercase tracking-widest bg-zinc-900/30 rounded-[3rem] border border-white/5">No data for this quarter.</div>
-                    ) : quarterlyRanking.slice(0, 10).map((eng, idx) => {
+                    ) : quarterlyRanking.slice(0, (appMode?.startsWith('PQA') ? 20 : 10)).map((eng, idx) => {
                       const isFirst = idx === 0;
                       const isSecond = idx === 1;
                       const isThird = idx === 2;
@@ -1517,7 +1543,7 @@ const PageContent = () => {
                       <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.4em] mb-8">Quarter Summary — {effectiveQuarterKey?.replace('-', ' · ')}</h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div className="text-center">
-                          <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-2">Engineers</p>
+                          <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-2">{appMode?.startsWith('PQA') ? 'Centers' : 'Engineers'}</p>
                           <p className="text-3xl font-black text-white">{quarterlyRanking.length}</p>
                         </div>
                         <div className="text-center">
@@ -1568,7 +1594,7 @@ const PageContent = () => {
 
                   <div className="space-y-4 relative z-10">
                     <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em]">Credential Verification</h3>
-                    <p className="text-zinc-400 text-xs font-medium uppercase tracking-widest">Enter unique engineer identification code below</p>
+                    <p className="text-zinc-400 text-xs font-medium uppercase tracking-widest">Enter unique {appMode?.startsWith('PQA') ? 'service center' : 'engineer'} identification code below</p>
                   </div>
 
                   <div className="space-y-8 relative z-10">
