@@ -3095,13 +3095,13 @@ const PageContent = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[
                     { label: 'LTP (Life-Time Perf)', pts: '10 pts', desc: 'Accumulated performance score focusing on long-term repair stability.' },
-                    { label: 'Ex-LTP (Expert LTP)', pts: '10 pts', desc: 'Performance on complex technical cases and high-end device repairs.' },
+                    { label: 'Ex-LTP (Excessive LTP)', pts: '10 pts', desc: 'Tracking and reducing excessive repair times to maintain productivity.' },
                     { label: 'REDO Rate', pts: '10 pts', desc: 'Service quality indicator measuring devices that returned within the warranty period.' },
-                    { label: 'SSR Utilization', pts: '20 pts', desc: 'Sub-Service Rate: Efficiency in using official Samsung logistics and sub-channels.' },
+                    { label: 'SSR (Same Symptom REDO)', pts: '20 pts', desc: 'Specific tracking for devices returning with identical symptoms within 30 days.' },
                     { label: 'D-RNPS', pts: '20 pts', desc: 'Retail Net Promoter Score for the service center, evaluating customer satisfaction.' },
-                    { label: 'OFS Accuracy', pts: '10 pts', desc: 'Operation Field Score: Adherence to operational protocols and reporting accuracy.' },
+                    { label: 'OFS Ordering Accuracy', pts: '10 pts', desc: 'Ordering Field Score: Warehouse accuracy and precision in ordering spare parts.' },
                     { label: 'R-CXE Experience', pts: '10 pts', desc: 'Customer Experience quality measured through environment and staff interaction.' },
-                    { label: 'SDR Delivery', pts: '10 pts', desc: 'Service Delivery Rate: Speed and accuracy of device processing and return.' },
+                    { label: 'SDR (Same Day Repair)', pts: '10 pts', desc: 'Speed efficiency measuring the percentage of repairs completed on the same day.' },
                   ].map(({ label, pts, desc }) => (
                     <div key={label} className="bg-zinc-900 shadow-xl border border-white/5 rounded-3xl p-8 space-y-3 group hover:border-blue-500/30 transition-all">
                       <div className="flex items-center justify-between">
