@@ -1133,6 +1133,8 @@ const PageContent = () => {
       let regionCol = -1;
       let codeCol = -1;
       let nameCol = -1;
+      let ytdScoreCol = -1;
+      let ytdRankCol = -1;
       let monthRow = -1;
       let metricRow = -1;
 
@@ -1144,12 +1146,14 @@ const PageContent = () => {
           if (val === 'region') regionCol = j;
           if (val === 'asc code' || val === 'code' || (val.includes('code') && val.includes('asc'))) codeCol = j;
           if (val === 'asc name' || val === 'name' || (val.includes('name') && val.includes('asc'))) nameCol = j;
-          if (val === 'ltp' || val === 'evaluation item') metricRow = i;
+          if (val.includes('kpi score total') || (val.includes('score') && val.includes('total'))) ytdScoreCol = j;
+          if (val.includes('accumelated year rank') || val.includes('year rank') || val.includes('accumulated')) ytdRankCol = j;
+          if (val === 'ltp' || val.includes('evaluation pts')) metricRow = i;
           if (val.includes('-2') || val.includes('-20')) monthRow = i;
         }
       }
 
-      // Fallbacks for standard formats if detection fails
+      // Fallbacks
       if (codeCol === -1) codeCol = 1; 
       if (nameCol === -1) nameCol = 2;
       if (regionCol === -1) regionCol = 0;
@@ -1159,7 +1163,6 @@ const PageContent = () => {
       if (isHorizontal) {
         // --- HORIZONTAL PQA FORMAT PARSER ---
         const monthHeaderRow = rows[monthRow] || [];
-        // Data usually starts 1-2 rows after the metric row or month row
         const dataStartRow = Math.max(monthRow, metricRow) + 1;
         
         for (let i = dataStartRow; i < rows.length; i++) {
@@ -1169,11 +1172,12 @@ const PageContent = () => {
           const region = String(row[regionCol] || '').trim();
           const pCode = String(row[codeCol]).trim();
           const pName = String(row[nameCol] || pCode).trim();
+          const ytdScore = parseFloat(row[ytdScoreCol]) || 0;
+          const ytdRank = parseInt(row[ytdRankCol]) || 0;
           
-          // Skip header repetitions
           if (!pCode || pCode.toLowerCase().includes('code')) continue;
 
-          // Scan the monthHeaderRow for month blocks (e.g., "Jan-26")
+          // Scan Row 2 for month blocks (e.g., "Jan-26")
           for (let j = 0; j < monthHeaderRow.length; j++) {
             const cellVal = String(monthHeaderRow[j]);
             if (cellVal.includes('-2') || cellVal.includes('-20')) {
@@ -1183,20 +1187,23 @@ const PageContent = () => {
               let year = parts[1]?.trim() || new Date().getFullYear().toString();
               if (year.length === 2) year = `20${year}`;
 
-              // Metrics usually reside in 10-column chunks starting from this J
-              const ltp = parseFloat(row[j]) || 0;
-              const exLtp = parseFloat(row[j+1]) || 0;
-              const redo = parseFloat(row[j+2]) || 0;
-              const ssr = parseFloat(row[j+3]) || 0;
-              const drnps = parseFloat(row[j+4]) || 0;
-              const ofs = parseFloat(row[j+5]) || 0;
-              const rcxe = parseFloat(row[j+6]) || 0;
-              const sdr = parseFloat(row[j+7]) || 0;
-              const audit = parseFloat(row[j+8]) || 0;
-              const pr = parseFloat(row[j+9]) || 0;
+              // Block layout (12 columns): 
+              // j: Monthly Points, j+1: Monthly Rank, j+2: LTP, j+3: EX-LTP, j+4: REDO, j+5: SSR, j+6: D-RNPS, j+7: OFS, j+8: R-CXE, j+9: SDR, j+10: Audit, j+11: PR
+              const excelMonthlyScore = parseFloat(row[j]) || 0;
+              const monthlyRank = parseInt(row[j+1]) || 0;
+              const ltp = parseFloat(row[j+2]) || 0;
+              const exLtp = parseFloat(row[j+3]) || 0;
+              const redo = parseFloat(row[j+4]) || 0;
+              const ssr = parseFloat(row[j+5]) || 0;
+              const drnps = parseFloat(row[j+6]) || 0;
+              const ofs = parseFloat(row[j+7]) || 0;
+              const rcxe = parseFloat(row[j+8]) || 0;
+              const sdr = parseFloat(row[j+9]) || 0;
+              const audit = parseFloat(row[j+10]) || 0;
+              const pr = parseFloat(row[j+11]) || 0;
 
               // Only import if there's actual data
-              if (ltp !== 0 || redo !== 0 || drnps !== 0 || ofs !== 0 || ssr !== 0) {
+              if (excelMonthlyScore !== 0 || ltp !== 0 || ssr !== 0) {
                 const pqaRecord = {
                   id: '',
                   region,
@@ -1206,9 +1213,12 @@ const PageContent = () => {
                   partnerName: "N/A",
                   month: mName,
                   year: year,
-                  ltp, exLtp, redo, ssr, dRnps: drnps, ofs, rCxe: rcxe, sdr, audit, pr
+                  ltp, exLtp, redo, ssr, dRnps: drnps, ofs, rCxe: rcxe, sdr, audit, pr,
+                  ytdScore,
+                  ytdRank,
+                  monthlyRank,
+                  tcsScore: excelMonthlyScore || calculatePQAScore({ltp, exLtp, redo, ssr, dRnps: drnps, ofs, rCxe: rcxe, sdr, audit, pr})
                 };
-                pqaRecord.tcsScore = calculatePQAScore(pqaRecord);
                 pqaRecord.tier = getTier(pqaRecord.tcsScore);
                 uploadedRecords.push(pqaRecord);
               }
@@ -1240,6 +1250,7 @@ const PageContent = () => {
               sdr: parseFloat(row[14]) || 0,
               audit: parseFloat(row[15]) || 0,
               pr: parseFloat(row[16]) || 0,
+              tcsScore: 0
             };
             eng.tcsScore = calculatePQAScore(eng);
           } else {
@@ -2391,7 +2402,18 @@ const PageContent = () => {
                         <span className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-500">Personnel Dossier</span>
                       </div>
                       <h2 className="text-3xl md:text-5xl font-black tracking-tighter text-white uppercase italic">{selectedEngineer.name}</h2>
-                      <p className="text-zinc-500 font-mono text-[10px] uppercase tracking-[0.6em]">{selectedEngineer.code}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <p className="text-zinc-500 font-mono text-[10px] uppercase tracking-[0.6em]">{selectedEngineer.code}</p>
+                        {selectedEngineer.ytdRank > 0 && (
+                          <div className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full flex items-center gap-2">
+                            <Trophy className="w-3 h-3 text-yellow-500" />
+                            <span className="text-[10px] font-black text-yellow-400 uppercase tracking-widest">YTD Rank: #{selectedEngineer.ytdRank}</span>
+                          </div>
+                        )}
+                        {selectedEngineer.region && (
+                           <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Region: {selectedEngineer.region}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -2539,11 +2561,14 @@ const PageContent = () => {
                       {/* Score breakdown + TCS total */}
                       <div className="glass-card rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8 border-blue-500/10">
                         {/* Big TCS total */}
-                        <div className="flex flex-col items-center md:border-r border-white/5 md:pr-8 flex-shrink-0">
+                    <div className="flex flex-col items-center md:border-r border-white/5 md:pr-8 flex-shrink-0">
                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2">
-                            {profileViewMode === 'QUARTERLY' ? `Avg TCS — ${effQKey?.replace('-', ' ')}` : `TCS Score — ${effMonthKey?.replace('-', ' ')}`}
+                            {profileViewMode === 'QUARTERLY' ? `Avg ${isPqaMode ? 'Points' : 'TCS'} — ${effQKey?.replace('-', ' ')}` : `${isPqaMode ? 'Monthly Sum' : 'TCS Score'} — ${effMonthKey?.replace('-', ' ')}`}
                           </span>
                           <span className="text-6xl font-black text-white italic tracking-tighter">{dispScore}</span>
+                          {dispRecord.monthlyRank > 0 && profileViewMode === 'MONTHLY' && (
+                            <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-2">Monthly Rank: #{dispRecord.monthlyRank}</span>
+                          )}
                           <TierBadge tier={getTier(dispScore)} size="lg" />
                         </div>
 
