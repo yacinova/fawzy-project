@@ -2513,13 +2513,15 @@ const PageContent = () => {
 
                   // The record whose data drives the performance bars
                   const dispRecord = profileViewMode === 'QUARTERLY' ? (qRecords[0] || selectedEngineer) : effRecord;
+                  const dispScore = profileViewMode === 'QUARTERLY' ? qAvgScore : effRecord.tcsScore;
+                  
                   // Weighted component pts - handle PQA vs TCS
                   const dispExam = isPqaMode ? 0 : (profileViewMode === 'QUARTERLY' ? qAvgExam : parseFloat(effRecord.examScore || 0));
                   const dispDrnps = isPqaMode ? parseFloat(effRecord.dRnps || 0) : (profileViewMode === 'QUARTERLY' ? qAvgDrnps : calculateDRNPS(effRecord.promoters, effRecord.detractors));
 
                   const examPts = isPqaMode ? 0 : parseFloat(Math.min(20, (dispExam / 100) * 20).toFixed(1));
                   const drnpsPts = isPqaMode ? 0 : parseFloat(Math.min(30, (dispDrnps / 100) * 30).toFixed(1));
-                  const kpiPts = isPqaMode ? dispScore : parseFloat(((dispScore - examPts - drnpsPts)).toFixed(1));
+                  const kpiPts = isPqaMode ? dispScore : parseFloat(((dispScore - (examPts || 0) - (drnpsPts || 0))).toFixed(1));
 
                   return (
                     <div className="space-y-8">
